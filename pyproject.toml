@@ -1,0 +1,18 @@
+[build-system]
+    requires = ["setuptools>=42", "wheel"]
+    build-backend = "setuptools.build_meta"
+
+    [tool.setuptools]
+    py-modules = ["darling"]
+
+    [project]
+    name = "darling"
+    version = "0.0.0"
+    description = "A python [D]ark field x-ray microscopy [A]nalysis &amp; [R]econstruction [L]ibrary for rapid data [IN]spection &amp; [G]raphing"
+    authors = [
+      { name = "{Axel Henningsson}", email = "{nilsaxelhenningsson@gmail.com}" }
+    ]
+    dependencies = ["numpy",
+                    "scipy",
+                    "matplotlib",
+                    ]
