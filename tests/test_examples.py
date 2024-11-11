@@ -1,4 +1,9 @@
-"""Parse python files and look for inline sphinx comments that represents examples. Check that these runs without errors.
+"""Parse python files and look for inline sphinx comments that represents examples. 
+
+I.e comments that starts with ".. code-block:: python" are parsed and the python code is returned
+as a strings.
+
+We then write example code to a temp file module and import to check for any obvious errors.
 """
 
 import os
@@ -10,6 +15,8 @@ import numpy as np
 
 
 def test_code():
+    """write strings of python code to a temp file module and import to check for obvious errors.
+    """
     _root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
     directory_path = os.path.join(_root_path, "darling")
     code_snippets = extract_sphinx_code(directory_path)
@@ -25,6 +32,17 @@ def test_code():
 
 
 def extract_sphinx_code(directory):
+    """Grab all python docstrings in all files in a directory and parse inline python code.
+
+    I.e comments that starts with ".. code-block:: python" are parsed and the python code is returned
+    as a strings.
+
+    Args:
+        directory (:obj: `str`): path to directory to traverse and parse.
+
+    Returns:
+        (:obj:`list` of `str`):: The python code snippets.
+    """
     # Pattern to capture entire Sphinx docstrings (triple-quoted strings)
     sphinx_docstring_pattern = re.compile(r"\"\"\"(.*?)\"\"\"", re.DOTALL)
     # Updated pattern to capture Python code blocks within a Sphinx docstring, stopping at a line with reduced indentation

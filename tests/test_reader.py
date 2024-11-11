@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import darling.properties
-from darling.assets import mosaisicty_scan
+from darling.assets import mosaicity_scan
 from darling.reader import MosaScan
 
 
@@ -14,7 +14,7 @@ class TestMosaScan(unittest.TestCase):
 
     def setUp(self):
         self.debug = False
-        self.path_to_data, _, _ = mosaisicty_scan()
+        self.path_to_data, _, _ = mosaicity_scan()
         self.motor_names = ["instrument/diffrz/data", "instrument/chi/value"]
 
     def test_init(self):

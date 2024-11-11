@@ -11,7 +11,7 @@ _root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", "..")
 _asset_path = os.path.join(_root_path, "assets")
 
 
-def mosaisicty_scan(scan_id='1.1'):
+def mosaicity_scan(scan_id='1.1'):
     """load part of a 2d mosaicity scan collected at the ESRF id03.
 
     This is a central detector ROI for a 111 reflection in a 5% deformed Aluminium. Two layers
@@ -67,5 +67,5 @@ def gaussian_blobs(N=32, m=9):
 
 
 if __name__ == "__main__":
-    data_path, data, coord = mosaisicty_scan()
+    data_path, data, coord = mosaicity_scan()
     data, coord = gaussian_blobs(N=16, m=7)

@@ -5,14 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import darling.properties
-from darling.assets import mosaisicty_scan
+from darling.assets import mosaicity_scan
 
 class TestMoments(unittest.TestCase):
     # Tests for the darling.properties module.
 
     def setUp(self):
         self.debug = False
-        _, self.data, self.coordinates = mosaisicty_scan()
+        _, self.data, self.coordinates = mosaicity_scan()
 
     def test_mean(self):
         # Test that a series of displaced gaussians gives back the input mean

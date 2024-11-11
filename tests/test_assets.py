@@ -13,7 +13,7 @@ class TestAssets(unittest.TestCase):
         self.debug = False
 
     def test_mosaicity_scan(self):
-        path, data, coordinates = darling.assets.mosaisicty_scan()
+        path, data, coordinates = darling.assets.mosaicity_scan()
 
         self.assertTrue(isinstance(path, str))
         self.assertTrue(data.dtype == np.uint16)
