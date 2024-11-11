@@ -10,7 +10,7 @@ from darling.reader import MosaScan
 
 
 class TestMosaScan(unittest.TestCase):
-    # Tests for the darling.properties module.
+    # Tests for the darling.MosaScan class.
 
     def setUp(self):
         self.debug = False
