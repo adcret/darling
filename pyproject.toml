@@ -19,4 +19,7 @@
     dependencies = ["numpy",
                     "scipy",
                     "matplotlib",
+                    "hdf5plugin",
+                    "matplotlib",
+                    "numba",
                     ]
