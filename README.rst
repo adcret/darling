@@ -10,6 +10,11 @@ Adam André William Cretton,
 
 affiliated with DTU. The core ideas of this library was originally written during a beamtime at ESRF id03D. If you use this code in your research we ask that you cite this repository.
 
+Documentation
+------------------------------------
+Darling hosts documentation at https://axelhenningsson.github.io/darling/
+
+
 Installation
 ------------------------------------
 From source
