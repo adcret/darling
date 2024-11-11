@@ -105,7 +105,7 @@ class MosaScan(Reader):
             else:
                 data = h5f[scan_id][data_name][:, :, :]
 
-            data = self.data.reshape(
+            data = data.reshape(
                 (*voxel_distribution_shape, data.shape[-2], data.shape[-1])
             )
             data = data.swapaxes(0, 2)
