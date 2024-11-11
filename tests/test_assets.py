@@ -3,7 +3,10 @@ import unittest
 
 import matplotlib.pyplot as plt
 import numpy as np
-import darling
+
+from darling.assets import mosaicity_scan
+from darling.assets import energy_scan
+from darling.assets import gaussian_blobs
 
 
 class TestAssets(unittest.TestCase):
@@ -13,7 +16,20 @@ class TestAssets(unittest.TestCase):
         self.debug = False
 
     def test_mosaicity_scan(self):
-        path, data, coordinates = darling.assets.mosaicity_scan()
+        path, data, coordinates = mosaicity_scan()
+
+        self.assertTrue(isinstance(path, str))
+        self.assertTrue(data.dtype == np.uint16)
+        self.assertTrue(len(data.shape) == 4)
+        self.assertTrue(data.shape[2] == len(coordinates[0]))
+        self.assertTrue(data.shape[3] == len(coordinates[1]))
+        self.assertTrue(coordinates[0].dtype == np.float32)
+        self.assertTrue(coordinates[1].dtype == np.float32)
+        self.assertTrue(len(coordinates[0].shape) == 1)
+        self.assertTrue(len(coordinates[1].shape) == 1)
+
+    def test_energy_scan(self):
+        path, data, coordinates = energy_scan()
 
         self.assertTrue(isinstance(path, str))
         self.assertTrue(data.dtype == np.uint16)
@@ -28,7 +44,7 @@ class TestAssets(unittest.TestCase):
     def test_gaussian_blobs(self):
         m = 5
         N = 19
-        data, coordinates = darling.assets.gaussian_blobs(N=N, m=m)
+        data, coordinates = gaussian_blobs(N=N, m=m)
 
         self.assertTrue(len(data.shape) == 4)
         self.assertTrue(data.shape[2] == m)

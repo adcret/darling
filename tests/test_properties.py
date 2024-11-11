@@ -4,15 +4,15 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
-import darling.properties
-from darling.assets import mosaicity_scan
+from darling import assets
+from darling import properties
 
 class TestMoments(unittest.TestCase):
     # Tests for the darling.properties module.
 
     def setUp(self):
         self.debug = False
-        _, self.data, self.coordinates = mosaicity_scan()
+        _, self.data, self.coordinates = assets.mosaicity_scan()
 
     def test_mean(self):
         # Test that a series of displaced gaussians gives back the input mean
@@ -36,7 +36,7 @@ class TestMoments(unittest.TestCase):
         data = data.round().astype(np.uint16)
 
         # Compute mean values
-        mu = darling.properties.mean(data, coordinates=(x, y))
+        mu = properties.mean(data, coordinates=(x, y))
 
         # Check that error is within the x,y resolution
         resolution = x[1] - x[0]
@@ -60,7 +60,7 @@ class TestMoments(unittest.TestCase):
 
     def test_mean_noisy(self):
         # Simply assert that the mean function runs on real noisy data from id03.
-        mu = darling.properties.mean(self.data, self.coordinates)
+        mu = properties.mean(self.data, self.coordinates)
         self.assertEqual(mu.shape[0], self.data.shape[0])
         self.assertEqual(mu.shape[1], self.data.shape[1])
         self.assertEqual(mu.shape[2], 2)
@@ -103,7 +103,7 @@ class TestMoments(unittest.TestCase):
         data = data.round().astype(np.uint16)
 
         # Compute covariance values
-        cov = darling.properties.covariance(data, coordinates=(x, y))
+        cov = properties.covariance(data, coordinates=(x, y))
 
         # Check that error is within the x,y resolution
         resolution = x[1] - x[0]
@@ -134,7 +134,7 @@ class TestMoments(unittest.TestCase):
 
     def test_covariance_noisy(self):
         # Simply assert that the covariance function runs on real noisy data from id03.
-        cov = darling.properties.covariance(self.data, self.coordinates)
+        cov = properties.covariance(self.data, self.coordinates)
         self.assertEqual(cov.shape[0], self.data.shape[0])
         self.assertEqual(cov.shape[1], self.data.shape[1])
         self.assertEqual(cov.shape[2], 2)
@@ -182,7 +182,7 @@ class TestMoments(unittest.TestCase):
         data = data.round().astype(np.uint16)
 
         # Compute covariance and mean values
-        mu, cov = darling.properties.moments(data, coordinates=(x, y))
+        mu, cov = properties.moments(data, coordinates=(x, y))
 
         # Check that errors are within the x,y resolution
         resolution = x[1] - x[0]
@@ -204,7 +204,7 @@ class TestMoments(unittest.TestCase):
     def test_moments_noisy(self):
         # Simply assert that the covariance and mean functions runs on real
         # noisy data from id03.
-        mu, cov = darling.properties.moments(self.data, self.coordinates)
+        mu, cov = properties.moments(self.data, self.coordinates)
         self.assertEqual(cov.shape[0], self.data.shape[0])
         self.assertEqual(cov.shape[1], self.data.shape[1])
         self.assertEqual(cov.shape[2], 2)

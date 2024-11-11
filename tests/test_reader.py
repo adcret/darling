@@ -4,9 +4,7 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
-import darling.properties
-from darling.assets import mosaicity_scan
-from darling.reader import MosaScan
+import darling
 
 
 class TestMosaScan(unittest.TestCase):
@@ -14,12 +12,12 @@ class TestMosaScan(unittest.TestCase):
 
     def setUp(self):
         self.debug = False
-        self.path_to_data, _, _ = mosaicity_scan()
+        self.path_to_data, _, _ = darling.assets.mosaicity_scan()
         self.motor_names = ["instrument/diffrz/data", "instrument/chi/value"]
 
     def test_init(self):
         # Assert that the reader can be instantiated.
-        reader = MosaScan(
+        reader = darling.reader.MosaScan(
             self.path_to_data,
             self.motor_names,
             motor_precision=[2, 2],
@@ -28,7 +26,7 @@ class TestMosaScan(unittest.TestCase):
     def test_read(self):
         # assert that the reader will read data and coordinates of the correct type and 
         # expected shapes.
-        reader = MosaScan(
+        reader = darling.reader.MosaScan(
             self.path_to_data,
             self.motor_names,
             motor_precision=[2, 2],
@@ -52,7 +50,7 @@ class TestMosaScan(unittest.TestCase):
     
     def test_roi_read(self):
         # assert that the reader will read a roi
-        reader = MosaScan(
+        reader = darling.reader.MosaScan(
             self.path_to_data,
             self.motor_names,
             motor_precision=[2, 2],
@@ -78,7 +76,7 @@ class TestMosaScan(unittest.TestCase):
     def test_scan_id(self):
         # ensure that another scan id can be read
         # assert that the reader will read a roi
-        reader = MosaScan(
+        reader = darling.reader.MosaScan(
             self.path_to_data,
             self.motor_names,
             motor_precision=[2, 2],

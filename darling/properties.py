@@ -13,7 +13,8 @@ As an example, in a DFXM mosaicity-scan setting, using random arrays, the moment
 
     # create a random data array
     detector_dim = (128, 128)
-    data = np.random.rand(len(phi), len(chi), *detector_dim)
+    data = np.random.rand(*detector_dim, len(phi), len(chi))
+
     data = data.astype(np.uint16)
 
     # compute the first and second moments
@@ -47,7 +48,8 @@ def moments(data, coordinates):
 
         # create a random data array
         detector_dim = (128, 128)
-        data = np.random.rand(len(phi), len(chi), *detector_dim)
+        data = np.random.rand(*detector_dim, len(phi), len(chi))
+
         data = data.astype(np.uint16)
 
         # compute the first and second moments
@@ -90,7 +92,8 @@ def mean(data, coordinates):
 
         # create a random data array
         detector_dim = (128, 128)
-        data = np.random.rand(len(phi), len(chi), *detector_dim)
+        data = np.random.rand(*detector_dim, len(phi), len(chi))
+
         data = data.astype(np.uint16)
 
         # compute the first moments
@@ -134,7 +137,8 @@ def covariance(data, coordinates, first_moments=None):
 
         # create a random data array
         detector_dim = (128, 128)
-        data = np.random.rand(len(phi), len(chi), *detector_dim)
+        data = np.random.rand(*detector_dim, len(phi), len(chi))
+
         data = data.astype(np.uint16)
 
         # compute the first moments
