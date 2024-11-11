@@ -5,6 +5,10 @@
     [tool.setuptools]
     py-modules = ["darling"]
 
+    [tool.pytest.ini_options]
+    pythonpath = [
+      ".",    ]
+
     [project]
     name = "darling"
     version = "0.0.0"
