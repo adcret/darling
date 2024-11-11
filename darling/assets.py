@@ -29,8 +29,8 @@ def mosaisicty_scan(scan_id='1.1'):
     data_path = os.path.join(_asset_path, "example_data", "mosa_scan_id03", "mosa_scan.h5")
     with h5py.File(data_path, "r") as f:
         data = f[scan_id]["instrument/pco_ff/image"][:,:,:]
-        phi = np.unique(f[scan_id]["instrument/diffrz/data"][:].round(2))
-        chi = np.unique(f[scan_id]["instrument/chi/value"][:].round(2))
+        phi = np.unique(f[scan_id]["instrument/diffrz/data"][:].round(2)).astype(np.float32)
+        chi = np.unique(f[scan_id]["instrument/chi/value"][:].round(2)).astype(np.float32)
         data = data.reshape((len(phi), len(chi), data.shape[-2], data.shape[-1]))
         data = data.swapaxes(0, 2)
         data = data.swapaxes(1,-1)
