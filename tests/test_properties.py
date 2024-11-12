@@ -41,7 +41,7 @@ class TestMoments(unittest.TestCase):
         # Check that error is within the x,y resolution
         resolution = x[1] - x[0]
         relative_error = (true_mean - mu) / resolution
-        #np.testing.assert_array_less(relative_error, np.ones_like(relative_error))
+        np.testing.assert_array_less(relative_error, np.ones_like(relative_error))
 
         if self.debug:
             plt.style.use("dark_background")

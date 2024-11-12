@@ -280,7 +280,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <span class="c1"># create a random data array</span>
 <span class="n">detector_dim</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chi</span><span class="p">),</span> <span class="o">*</span><span class="n">detector_dim</span><span class="p">)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
 <span class="c1"># compute the first and second moments</span>
 <span class="n">mean</span><span class="p">,</span> <span class="n">covariance</span> <span class="o">=</span> <span class="n">darling</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">moments</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">chi</span><span class="p">))</span>
@@ -292,7 +292,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <dd><p>Compute the sample mean and covariance of a 4D DFXM data-set.</p>
 <p>The data-set represents a DFXM scan with 2 degrees of freedom. These could be phi and chi or phi and energy, etc.</p>
 <dl class="simple">
-<dt>NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason</dt><dd><p>the data array must be of type numpy uint16.</p>
+<dt>NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason</dt><dd><p>the data array must be of type numpy int32.</p>
 </dd>
 </dl>
 <p>Example in a DFXM mosaicity-scan setting using random arrays:</p>
@@ -306,7 +306,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <span class="c1"># create a random data array</span>
 <span class="n">detector_dim</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chi</span><span class="p">),</span> <span class="o">*</span><span class="n">detector_dim</span><span class="p">)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
 <span class="c1"># compute the first and second moments</span>
 <span class="n">mean</span><span class="p">,</span> <span class="n">covariance</span> <span class="o">=</span> <span class="n">darling</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">moments</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">chi</span><span class="p">))</span>
@@ -316,7 +316,7 @@ pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </s
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Array of shape=(n, m, a, b) where the maps over which the mean will be calculated are
-of shape=(n, m) and the field is of shape=(a, b). Must be numpy uint16. I.e the detector roi is of shape=(a,b)
+of shape=(n, m) and the field is of shape=(a, b). Must be numpy int32. I.e the detector roi is of shape=(a,b)
 while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution for pixel i,j.</p></li>
 <li><p><strong>coordinates</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Tuple of len=2 continaning numpy 1d arrays specifying the coordinates
 in the n and m dimensions respectively. I.e, as an example, these could be the
@@ -338,7 +338,7 @@ phi and chi angular cooridnates.</p></li>
 <dd><p>Compute the sample mean of a 2D data map in parallel using shared memory.</p>
 <p>The data-set represents a DFXM scan with 2 degrees of freedom. These could be phi and chi or phi and energy, etc.</p>
 <dl class="simple">
-<dt>NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason</dt><dd><p>the data array must be of type numpy uint16.</p>
+<dt>NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason</dt><dd><p>the data array must be of type numpy int32.</p>
 </dd>
 </dl>
 <p>Example in a DFXM mosaicity-scan setting using random arrays:</p>
@@ -352,7 +352,7 @@ phi and chi angular cooridnates.</p></li>
 <span class="c1"># create a random data array</span>
 <span class="n">detector_dim</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chi</span><span class="p">),</span> <span class="o">*</span><span class="n">detector_dim</span><span class="p">)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
 <span class="c1"># compute the first moments</span>
 <span class="n">first_moment</span> <span class="o">=</span> <span class="n">darling</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">chi</span><span class="p">))</span>
@@ -362,7 +362,7 @@ phi and chi angular cooridnates.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Array of shape=(n, m, a, b) where the maps over which the mean will be calculated are
-of shape=(n, m) and the field is of shape=(a, b). Must be numpy uint16. I.e the detector roi is of shape=(a,b)
+of shape=(n, m) and the field is of shape=(a, b). Must be numpy int32. I.e the detector roi is of shape=(a,b)
 while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution for pixel i,j.</p></li>
 <li><p><strong>coordinates</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Tuple of len=2 continaning numpy 1d arrays specifying the coordinates
 in the n and m dimensions respectively. I.e, as an example, these could be the
@@ -383,7 +383,7 @@ phi and chi angular cooridnates.</p></li>
 <span class="sig-prename descclassname"><span class="pre">darling.properties.</span></span><span class="sig-name descname"><span class="pre">covariance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">first_moments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/properties.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.properties.covariance" title="Link to this definition">#</a></dt>
 <dd><p>Compute the sample covariance of a 2D data map in parallel using shared memory.</p>
 <dl class="simple">
-<dt>NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason</dt><dd><p>the data array must be of type numpy uint16.</p>
+<dt>NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason</dt><dd><p>the data array must be of type numpy int32.</p>
 </dd>
 </dl>
 <p>Example in a DFXM mosaicity-scan setting using random arrays:</p>
@@ -397,7 +397,7 @@ phi and chi angular cooridnates.</p></li>
 <span class="c1"># create a random data array</span>
 <span class="n">detector_dim</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
 <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">phi</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">chi</span><span class="p">),</span> <span class="o">*</span><span class="n">detector_dim</span><span class="p">)</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
 
 <span class="c1"># compute the first moments</span>
 <span class="n">first_moment</span> <span class="o">=</span> <span class="n">darling</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="p">(</span><span class="n">phi</span><span class="p">,</span> <span class="n">chi</span><span class="p">))</span>
@@ -410,7 +410,7 @@ phi and chi angular cooridnates.</p></li>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Array of shape=(n, m, a, b) where the maps over which the covariance will be calculated are
-of shape=(n, m) and the field is of shape=(a, b). Must be numpy uint16. I.e the detector roi is of shape=(a,b)
+of shape=(n, m) and the field is of shape=(a, b). Must be numpy int32. I.e the detector roi is of shape=(a,b)
 while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution for pixel i,j.</p></li>
 <li><p><strong>coordinates</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Tuple of len=2 continaning numpy 1d arrays specifying the coordinates
 in the n and m dimensions respectively. I.e, as an example, these could be the
@@ -542,7 +542,7 @@ dimensions.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>data (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) of shape=(a,b,m,n) and type np.uint16 and motors
+<dd class="field-even"><p>data (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) of shape=(a,b,m,n) and type np.int32 and motors
 (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) of shape=(m,) and shape=(n,) and type
 np.float32. a,b are detector dimensions while m,n are scan dimensions over
 which teh motor settings vary.</p>
