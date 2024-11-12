@@ -17,7 +17,7 @@ class TestAssets(unittest.TestCase):
         path, data, coordinates = mosaicity_scan()
 
         self.assertTrue(isinstance(path, str))
-        self.assertTrue(data.dtype == np.uint16)
+        self.assertTrue(data.dtype == np.int32)
         self.assertTrue(len(data.shape) == 4)
         self.assertTrue(data.shape[2] == len(coordinates[0]))
         self.assertTrue(data.shape[3] == len(coordinates[1]))
@@ -30,7 +30,7 @@ class TestAssets(unittest.TestCase):
         path, data, coordinates = energy_scan()
 
         self.assertTrue(isinstance(path, str))
-        self.assertTrue(data.dtype == np.uint16)
+        self.assertTrue(data.dtype == np.int32)
         self.assertTrue(len(data.shape) == 4)
         self.assertTrue(data.shape[2] == len(coordinates[0]))
         self.assertTrue(data.shape[3] == len(coordinates[1]))

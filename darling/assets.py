@@ -40,6 +40,7 @@ def mosaicity_scan(scan_id="1.1"):
         data = data.reshape((len(phi), len(chi), data.shape[-2], data.shape[-1]))
         data = data.swapaxes(0, 2)
         data = data.swapaxes(1, -1)
+        data = data.astype(np.int32, copy=False)
     return data_path, data, (phi, chi)
 
 
@@ -73,7 +74,7 @@ def energy_scan(scan_id="1.1"):
         _, det_rows, det_cols = f[ key0 + '/instrument/pco_ff/data'].shape
         n_energy = len(f.keys())
         n_chis = len(chi)
-        data = np.zeros( (det_rows, det_cols , n_energy, n_chis), dtype=np.uint16 )
+        data = np.zeros( (det_rows, det_cols , n_energy, n_chis), dtype=np.int32 )
         energy = np.zeros((n_energy,), dtype=np.float32)
         for i,key in enumerate(f.keys()): # iterates over energies.
             chi_stack = f[ key + '/instrument/pco_ff/data'][:,:,:]
@@ -81,6 +82,7 @@ def energy_scan(scan_id="1.1"):
             chi_stack = np.swapaxes(chi_stack, 1, 2)
             data[:,:,i,:] = chi_stack
             energy[i] = f[key + '/instrument/positioners/ccmth'][()]
+    data = data.astype(np.int32, copy=False)
     return data_path, data, (energy, chi)
 
 def gaussian_blobs(N=32, m=9):
@@ -108,7 +110,8 @@ def gaussian_blobs(N=32, m=9):
             data[i, j] = (
                 np.exp(-0.5 * (Si[0] * (X - x0) ** 2 + Si[1] * (Y - y0) ** 2)) * 64000
             )
-    data = data.round().astype(np.uint16)
+    np.round(data, out=data)
+    data = data.astype(np.int32, copy=False)
     return data, (x, y)
 
 
