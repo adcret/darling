@@ -4,8 +4,8 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
-from darling import assets
-from darling import properties
+from darling import assets, properties
+
 
 class TestMoments(unittest.TestCase):
     # Tests for the darling.properties module.

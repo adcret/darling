@@ -29,7 +29,7 @@ class DataSet(object):
         """
         self.data.clip(threshold, None, out=self.data)
         self.data-=threshold
-        
+
     def moments(self):
         self.mean, self.covariance = darling.properties.moments(self.data, self.coordinates)
 
@@ -51,10 +51,10 @@ class DataSet(object):
 
     def compile_layers(self, reader_args, scan_ids, threshold=None, roi=None):
         """Sequentially load a series of scans and assemble the 3D moment maps.
-        
+
         this loads the mosa data array with shape N,N,m,n where N is the detector dimension and
         m,n are the motor dimensions as ordered in the self.motor_names.
-        
+
         Args:
             data_name, str : path to the data without the prepended scan id
             threshold, int : background subtraction value
@@ -67,7 +67,7 @@ class DataSet(object):
         for args, scan_id in zip(reader_args, scan_ids):
             print("read in scan ", scan_id)
             self.reader(args, scan_id, roi)
-            if threshold: 
+            if threshold:
                 self.threshold(threshold)
             self.moments()
             layer_positions.append(scan_id)
@@ -78,7 +78,5 @@ class DataSet(object):
         self.layer_positions = np.array(layer_positions)
         print("finished!")
 
-# TODO: test this with h5 files form id03.
-
-if __name__=='__main__':
+if __name__ == "__main__":
     pass

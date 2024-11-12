@@ -4,9 +4,7 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
-from darling.assets import mosaicity_scan
-from darling.assets import energy_scan
-from darling.assets import gaussian_blobs
+from darling.assets import energy_scan, gaussian_blobs, mosaicity_scan
 
 
 class TestAssets(unittest.TestCase):

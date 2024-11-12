@@ -1,18 +1,18 @@
-"""Parse python files and look for inline sphinx comments that represents examples. 
+"""Parse python files and look for inline sphinx comments that represents examples.
 
 I.e comments that starts with ".. code-block:: python" are parsed and the python code is returned
 as a strings.
 
 We then write example code to a temp file module and import to check for any obvious errors.
 """
-import unittest
-
 import os
 import re
 import tempfile
+import unittest
 
 import matplotlib.pyplot as plt
 import numpy as np
+
 
 class TestSphinxExamples(unittest.TestCase):
 

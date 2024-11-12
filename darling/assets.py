@@ -3,9 +3,9 @@
 
 import os
 
+import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-import h5py
 
 _root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
 _asset_path = os.path.join(_root_path, "assets")
@@ -76,7 +76,7 @@ def energy_scan(scan_id="1.1"):
         data = np.zeros( (det_rows, det_cols , n_energy, n_chis), dtype=np.uint16 )
         energy = np.zeros((n_energy,), dtype=np.float32)
         for i,key in enumerate(f.keys()): # iterates over energies.
-            chi_stack = f[ key0 + '/instrument/pco_ff/data'][:,:,:]
+            chi_stack = f[ key + '/instrument/pco_ff/data'][:,:,:]
             chi_stack = np.swapaxes(chi_stack, 0, 1)
             chi_stack = np.swapaxes(chi_stack, 1, 2)
             data[:,:,i,:] = chi_stack

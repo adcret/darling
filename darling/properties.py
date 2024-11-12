@@ -169,19 +169,23 @@ def covariance(data, coordinates, first_moments=None):
     _second_moments(data, first_moments, points, dum, res)
     return res
 
+
 def _check_data(data, coordinates):
     assert len(data.shape) == 4, "data array must be of shape=(n, m, a, b)"
     assert data.dtype == np.uint16, "data must be of type uint16"
     assert len(coordinates) == 2, "coordinates tuple must be of len=2"
+
 
 def _get_grid_mesh(coordinates):
     m1_mesh, m2_mesh = np.meshgrid(*coordinates, indexing="ij")
     m1_mesh, m2_mesh = m1_mesh.astype(np.float32), m2_mesh.astype(np.float32)
     return m1_mesh, m2_mesh
 
+
 def _get_point_mesh(coordinates):
     m1_mesh, m2_mesh = _get_grid_mesh(coordinates)
     return np.array([m1_mesh.flatten(), m2_mesh.flatten()])
+
 
 @numba.guvectorize(
     [
