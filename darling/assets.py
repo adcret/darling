@@ -23,7 +23,7 @@ def mosaicity_scan(scan_id="1.1"):
     Returns:
         data_path (:obj:`str`): absolute path to h5 file.
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) with intensity data. data[:,:,i,j] is a noisy
-            detector image in type unit16 for phi and chi at index i and j respectively.
+            detector image in type uint16 for phi and chi at index i and j respectively.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning phi and chi angular coordinates.
     """
     data_path = os.path.join(
@@ -40,7 +40,6 @@ def mosaicity_scan(scan_id="1.1"):
         data = data.reshape((len(phi), len(chi), data.shape[-2], data.shape[-1]))
         data = data.swapaxes(0, 2)
         data = data.swapaxes(1, -1)
-        data = data.astype(np.int32, copy=False)
     return data_path, data, (phi, chi)
 
 
@@ -59,7 +58,7 @@ def energy_scan(scan_id="1.1"):
     Returns:
         data_path (:obj:`str`): absolute path to h5 file.
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) with intensity data. data[:,:,i,j] is a noisy
-            detector image in type unit16 for energy and chi at index i and j respectively.
+            detector image in type uint16 for energy and chi at index i and j respectively.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning energy and chi angular coordinates.
     """
     data_path = os.path.join(
@@ -74,7 +73,7 @@ def energy_scan(scan_id="1.1"):
         _, det_rows, det_cols = f[ key0 + '/instrument/pco_ff/data'].shape
         n_energy = len(f.keys())
         n_chis = len(chi)
-        data = np.zeros( (det_rows, det_cols , n_energy, n_chis), dtype=np.int32 )
+        data = np.zeros( (det_rows, det_cols , n_energy, n_chis), dtype=np.uint16 )
         energy = np.zeros((n_energy,), dtype=np.float32)
         for i,key in enumerate(f.keys()): # iterates over energies.
             chi_stack = f[ key + '/instrument/pco_ff/data'][:,:,:]
@@ -82,7 +81,6 @@ def energy_scan(scan_id="1.1"):
             chi_stack = np.swapaxes(chi_stack, 1, 2)
             data[:,:,i,:] = chi_stack
             energy[i] = f[key + '/instrument/positioners/ccmth'][()]
-    data = data.astype(np.int32, copy=False)
     return data_path, data, (energy, chi)
 
 def gaussian_blobs(N=32, m=9):
@@ -93,7 +91,7 @@ def gaussian_blobs(N=32, m=9):
 
     Returns:
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) with intensity data. data[:,:,i,j] is a noisy
-            detector image in type unit16 for motor x and y at index i and j respectively.
+            detector image in type uint16 for motor x and y at index i and j respectively.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning x and y coordinates.
     """
     x = y = np.linspace(-1, 1, m, dtype=np.float32)
@@ -111,7 +109,7 @@ def gaussian_blobs(N=32, m=9):
                 np.exp(-0.5 * (Si[0] * (X - x0) ** 2 + Si[1] * (Y - y0) ** 2)) * 64000
             )
     np.round(data, out=data)
-    data = data.astype(np.int32, copy=False)
+    data = data.astype(np.uint16, copy=False)
     return data, (x, y)
 
 

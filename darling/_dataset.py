@@ -115,11 +115,11 @@ class _Visualizer(object):
             ),
             axis=2,
         )
-    
+
     def _mosa(self, ang1, ang2):
         angles = np.arctan2(-ang1, -ang2)
         anlges_normalized = self._wrap2pi(angles) / np.pi / 2
-        radius = np.sqrt(ang2**2 + ang2**2) 
+        radius = np.sqrt(ang2**2 + ang2**2)
         radius_normalized = radius / radius.max()
         return anlges_normalized, radius_normalized
 
@@ -231,13 +231,34 @@ class DataSet(object):
             self.data, self.motors = self.reader(args, scan_id, roi)
 
     def subtract(self, value):
-        """Subtract a fixed integer value form the data.
+        """Subtract a fixed integer value form the data. Protects against uint16 sign flips.
 
         Args:
             value (:obj:`int`): value to subtract.
 
         """
+        self.data.clip(value, None, out=self.data)
         self.data -= value
+
+    def estimate_background(self):
+        """Automatic background correction based on image statistics.
+
+        a set of sample data is extracted from the data block. The median and standard deviations are iteratively
+        fitted, rejecting outliers (which here is diffraction signal). Once the noise distirbution has been established
+        the value corresponding to the 99.99% percentile is returned. I.e the far tail of the noise is returned.
+
+        """
+        sample_size = 40000
+        index = np.random.permutation(sample_size)
+        sample = self.data.flat[index]
+        sample = np.sort(sample)
+        noise = sample.copy()
+        for i in range(20):
+            mu = np.median(noise)
+            std = np.std(noise)
+            noise = noise[np.abs(noise) < mu + 2 * 3.891 * std] # 99.99% confidence
+        background = np.max(noise)
+        return background
 
     def moments(self):
         """Compute first and second moments.
@@ -327,12 +348,27 @@ if __name__ == "__main__":
     path_to_data, _, _ = darling.assets.mosaicity_scan()
     reader = darling.reader.MosaScan(
         path_to_data,
-        ["instrument/diffrz/data", "instrument/chi/value"],
-        motor_precision=[2, 2],
+        ["instrument/chi/value", "instrument/diffrz/data"],
+        motor_precision=[3, 3],
     )
+
     data_name = "instrument/pco_ff/image"
     dset = darling.DataSet(reader)
     dset.load_scan(data_name, scan_id="1.1", roi=None)
+
+    # path_to_data, _, _ = darling.assets.energy_scan()
+    # data_name = "instrument/pco_ff/data"
+    # reader = darling.reader.EnergyScan(
+    # path_to_data,
+    # ["instrument/positioners/ccmth", "instrument/chi/value"],
+    # motor_precision=[4, 4],
+    # )
+    # dset = darling.DataSet(reader)
+
+    # dset.load_scan(data_name, scan_id="1.1", roi=None)
+
+    background = dset.estimate_background()
+    dset.subtract(background)
     mean, covariance = dset.moments()
 
     #dset.plot.mean()

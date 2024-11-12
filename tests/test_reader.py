@@ -13,7 +13,7 @@ class TestMosaScan(unittest.TestCase):
     def setUp(self):
         self.debug = False
         self.path_to_data, _, _ = darling.assets.mosaicity_scan()
-        self.motor_names = ["instrument/diffrz/data", "instrument/chi/value"]
+        self.motor_names = ["instrument/chi/value", "instrument/diffrz/data"]
         self.data_name = "instrument/pco_ff/image"
 
     def test_init(self):
@@ -93,7 +93,7 @@ class TestMosaScan(unittest.TestCase):
 
 
     def check_data(self, data, motors):
-        self.assertTrue(data.dtype == np.int32)
+        self.assertTrue(data.dtype == np.uint16)
         self.assertTrue(len(data.shape) == 4)
         self.assertTrue(data.shape[2] == len(motors[0]))
         self.assertTrue(data.shape[3] == len(motors[1]))
@@ -187,7 +187,7 @@ class TestEnergyScan(unittest.TestCase):
         self.assertNotEqual( np.max(np.abs(residual)), 0)
 
     def check_data(self, data, motors):
-        self.assertTrue(data.dtype == np.int32)
+        self.assertTrue(data.dtype == np.uint16)
         self.assertTrue(len(data.shape) == 4)
         self.assertTrue(data.shape[2] == len(motors[0]))
         self.assertTrue(data.shape[3] == len(motors[1]))

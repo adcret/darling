@@ -33,7 +33,7 @@ class TestMoments(unittest.TestCase):
                 )
                 true_mean.append([x0, y0])
         true_mean = np.array(true_mean).reshape(N, N, 2)
-        data = data.round().astype(np.int32)
+        data = data.round().astype(np.uint16)
 
         # Compute mean values
         mu = properties.mean(data, coordinates=(x, y))
@@ -100,7 +100,7 @@ class TestMoments(unittest.TestCase):
                 )
                 true_variance.append(S.copy())
         true_variance = np.array(true_variance).reshape(N, N, 2, 2)
-        data = data.round().astype(np.int32)
+        data = data.round().astype(np.uint16)
 
         # Compute covariance values
         cov = properties.covariance(data, coordinates=(x, y))
@@ -179,7 +179,7 @@ class TestMoments(unittest.TestCase):
                 true_mean.append([x0, y0])
         true_mean = np.array(true_mean).reshape(N, N, 2)
         true_variance = np.array(true_variance).reshape(N, N, 2, 2)
-        data = data.round().astype(np.int32)
+        data = data.round().astype(np.uint16)
 
         # Compute covariance and mean values
         mu, cov = properties.moments(data, coordinates=(x, y))

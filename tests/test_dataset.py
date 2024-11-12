@@ -76,9 +76,9 @@ class TestDataSet(unittest.TestCase):
         for reader, data_name in zip(self.readers, self.data_names):
             dset = darling.DataSet(reader)
             dset.load_scan(data_name, scan_id="1.1", roi=None)
-            mm = np.min(dset.data)
+            mm = np.max(dset.data)
             dset.subtract(value=200)
-            self.assertEqual(np.min(dset.data), mm - 200)
+            self.assertEqual(np.max(dset.data), mm - 200)
 
     def test_moments(self):
         for reader, data_name in zip(self.readers, self.data_names):
@@ -131,7 +131,7 @@ class TestDataSet(unittest.TestCase):
                 plt.show()
 
     def check_data(self, dset):
-        self.assertTrue(dset.data.dtype == np.int32)
+        self.assertTrue(dset.data.dtype == np.uint16)
         self.assertTrue(len(dset.data.shape) == 4)
         self.assertTrue(dset.data.shape[2] == len(dset.motors[0]))
         self.assertTrue(dset.data.shape[3] == len(dset.motors[1]))

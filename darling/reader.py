@@ -45,7 +45,7 @@ class Reader(object):
                 dimensions.
 
         Returns:
-            data (:obj:`numpy array`) of shape=(a,b,m,n) and type np.int32 and motors
+            data (:obj:`numpy array`) of shape=(a,b,m,n) and type np.uint16 and motors
             (:obj:`tuple` of :obj:`numpy array`) of shape=(m,) and shape=(n,) and type
             np.float32. a,b are detector dimensions while m,n are scan dimensions over
             which teh motor settings vary.
@@ -121,7 +121,6 @@ class MosaScan(Reader):
             )
             data = data.swapaxes(0, 2)
             data = data.swapaxes(1, -1)
-            data = data.astype(np.int32, copy=False)
 
         return data, motors
 
@@ -206,10 +205,10 @@ class EnergyScan(Reader):
             n_chis = len(chi)
 
             if roi is None:
-                data = np.zeros((det_rows, det_cols, n_energy, n_chis), dtype=np.uint32)
+                data = np.zeros((det_rows, det_cols, n_energy, n_chis), dtype=np.uint16)
             else:
                 r1, r2, c1, c2 = roi
-                data = np.zeros((r2 - r1, c2 - c1, n_energy, n_chis), dtype=np.uint32)
+                data = np.zeros((r2 - r1, c2 - c1, n_energy, n_chis), dtype=np.uint16)
 
             energy = np.zeros((n_energy,), dtype=np.float32)
 
@@ -232,8 +231,6 @@ class EnergyScan(Reader):
 
         assert len(chi) == data.shape[3], "Potential motor drift in chi"
         
-        data = data.astype(np.int32, copy=False)
-
         return data, motors
 
 

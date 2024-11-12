@@ -15,7 +15,7 @@ As an example, in a DFXM mosaicity-scan setting, using random arrays, the moment
     detector_dim = (128, 128)
     data = np.random.rand(*detector_dim, len(phi), len(chi))
 
-    data = data.astype(np.int32)
+    data = data.astype(np.uint16)
 
     # compute the first and second moments
     mean, covariance = darling.properties.moments(data, coordinates=(phi, chi))
@@ -33,7 +33,7 @@ def moments(data, coordinates):
     The data-set represents a DFXM scan with 2 degrees of freedom. These could be phi and chi or phi and energy, etc.
 
     NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason
-        the data array must be of type numpy int32.
+        the data array must be of type numpy uint16.
 
     Example in a DFXM mosaicity-scan setting using random arrays:
 
@@ -50,14 +50,14 @@ def moments(data, coordinates):
         detector_dim = (128, 128)
         data = np.random.rand(*detector_dim, len(phi), len(chi))
 
-        data = data.astype(np.int32)
+        data = data.astype(np.uint16)
 
         # compute the first and second moments
         mean, covariance = darling.properties.moments(data, coordinates=(phi, chi))
 
     Args:
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) where the maps over which the mean will be calculated are
-            of shape=(n, m) and the field is of shape=(a, b). Must be numpy int32. I.e the detector roi is of shape=(a,b)
+            of shape=(n, m) and the field is of shape=(a, b). Must be numpy uint16. I.e the detector roi is of shape=(a,b)
             while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution for pixel i,j.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning numpy 1d arrays specifying the coordinates
             in the n and m dimensions respectively. I.e, as an example, these could be the
@@ -77,7 +77,7 @@ def mean(data, coordinates):
     The data-set represents a DFXM scan with 2 degrees of freedom. These could be phi and chi or phi and energy, etc.
 
     NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason
-        the data array must be of type numpy int32.
+        the data array must be of type numpy uint16.
 
     Example in a DFXM mosaicity-scan setting using random arrays:
 
@@ -94,14 +94,14 @@ def mean(data, coordinates):
         detector_dim = (128, 128)
         data = np.random.rand(*detector_dim, len(phi), len(chi))
 
-        data = data.astype(np.int32)
+        data = data.astype(np.uint16)
 
         # compute the first moments
         first_moment = darling.properties.mean(data, coordinates=(phi, chi))
 
     Args:
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) where the maps over which the mean will be calculated are
-            of shape=(n, m) and the field is of shape=(a, b). Must be numpy int32. I.e the detector roi is of shape=(a,b)
+            of shape=(n, m) and the field is of shape=(a, b). Must be numpy uint16. I.e the detector roi is of shape=(a,b)
             while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution for pixel i,j.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning numpy 1d arrays specifying the coordinates
             in the n and m dimensions respectively. I.e, as an example, these could be the
@@ -122,7 +122,7 @@ def covariance(data, coordinates, first_moments=None):
     """Compute the sample covariance of a 2D data map in parallel using shared memory.
 
     NOTE: Computation is done in parallel using shared memory with numba just in time compiling. For this reason
-        the data array must be of type numpy int32.
+        the data array must be of type numpy uint16.
 
     Example in a DFXM mosaicity-scan setting using random arrays:
 
@@ -139,7 +139,7 @@ def covariance(data, coordinates, first_moments=None):
         detector_dim = (128, 128)
         data = np.random.rand(*detector_dim, len(phi), len(chi))
 
-        data = data.astype(np.int32)
+        data = data.astype(np.uint16)
 
         # compute the first moments
         first_moment = darling.properties.mean(data, coordinates=(phi, chi))
@@ -149,7 +149,7 @@ def covariance(data, coordinates, first_moments=None):
 
     Args:
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) where the maps over which the covariance will be calculated are
-            of shape=(n, m) and the field is of shape=(a, b). Must be numpy int32. I.e the detector roi is of shape=(a,b)
+            of shape=(n, m) and the field is of shape=(a, b). Must be numpy uint16. I.e the detector roi is of shape=(a,b)
             while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution for pixel i,j.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning numpy 1d arrays specifying the coordinates
             in the n and m dimensions respectively. I.e, as an example, these could be the
@@ -172,7 +172,7 @@ def covariance(data, coordinates, first_moments=None):
 
 def _check_data(data, coordinates):
     assert len(data.shape) == 4, "data array must be of shape=(n, m, a, b)"
-    assert data.dtype == np.int32, "data must be of type int32"
+    assert data.dtype == np.uint16, "data must be of type uint16"
     assert len(coordinates) == 2, "coordinates tuple must be of len=2"
 
 
@@ -190,7 +190,7 @@ def _get_point_mesh(coordinates):
 @numba.guvectorize(
     [
         (
-            numba.int32[:, :],
+            numba.uint16[:, :],
             numba.float32[:, :],
             numba.float32[:, :],
             numba.float32[:],
@@ -223,7 +223,7 @@ def _first_moments(chi_phi, chis, phis, dum, res):
 @numba.guvectorize(
     [
         (
-            numba.int32[:, :],
+            numba.uint16[:, :],
             numba.float32[:],
             numba.float32[:, :],
             numba.float32[:],
