@@ -28,7 +28,7 @@ Usecase
     mean, covariance = dset.moments()
     dset.plot.mosaicity()
 
-.. image:: https://github.com/FABLE-3DXRD/xrd_simulator/blob/main/docs/source/images/mosa.png?raw=true
+.. image:: https://github.com/AxelHenningsson/darling/blob/main/docs/source/images/mosa.png?raw=true
    :align: center
 
 Documentation
