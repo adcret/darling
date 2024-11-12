@@ -16,6 +16,7 @@
                     "scipy",
                     "matplotlib",
                     "hdf5plugin",
+                    "h5py",
                     "matplotlib",
                     "numba",
                     ]
