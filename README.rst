@@ -1,6 +1,6 @@
 DARLING
 ------------------------------------
-the python **[D]ark** field x-ray microscopy **[A] alysis** & **[R]econstruction** **[L]ibrary** for rapid data **[IN]spection** & **[G]raphing**
+the python **[D]ark** field x-ray microscopy **[A]nalysis** & **[R]econstruction** **[L]ibrary** for rapid data **[IN]spection** & **[G]raphing**
 
 Darling is written and maintained by: 
 
