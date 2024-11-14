@@ -3,6 +3,7 @@ import time
 import h5py
 import hdf5plugin
 import matplotlib.pyplot as plt
+import meshio
 import numpy as np
 import scipy.ndimage
 from matplotlib.colors import hsv_to_rgb
@@ -205,6 +206,7 @@ class DataSet(object):
         self.reader = reader
         self.plot = _Visualizer(self)
         self.mean, self.covariance = None, None
+        self.mean_3d, self.covariance_3d = None, None
 
     def load_scan(self, args, scan_id, roi=None):
         """Load a scan into RAM.
@@ -256,7 +258,7 @@ class DataSet(object):
         for i in range(20):
             mu = np.median(noise)
             std = np.std(noise)
-            noise = noise[np.abs(noise) < mu + 2 * 3.891 * std] # 99.99% confidence
+            noise = noise[np.abs(noise) < mu + 2 * 3.891 * std]  # 99.99% confidence
         background = np.max(noise)
         return background
 
@@ -314,64 +316,139 @@ class DataSet(object):
             mask = scipy.ndimage.binary_fill_holes(mask)
         return mask
 
-    def compile_layers(self, reader_args, scan_ids, threshold=None, roi=None):
+    def compile_layers(
+        self, reader_args, scan_ids, threshold=None, roi=None, verbose=False
+    ):
         """Sequentially load a series of scans and assemble the 3D moment maps.
 
-        this loads the mosa data array with shape N,N,m,n where N is the detector dimension and
-        m,n are the motor dimensions as ordered in the self.motor_names.
+        this loads the mosa data array with shape a,b,m,n,(o) where a,b are the detector dimension and
+        m,n,(o) are the motor dimensions as ordered in the self.motor_names.
+
+        NOTE: This function will load data sequentially and compute moments on the fly. While all
+        moment maps are stored and concatenated, only one scan (the raw 4d or 5d data) is keept in
+        memory at a time to enhance RAM performance.
 
         Args:
-            data_name, str : path to the data without the prepended scan id
-            threshold, int : background subtraction value
-            scan_IDs, str : scan ids to load, e.g 1.1, 2.1 etc...
-            roi, tuple of int, row_min row_max and column_min and column_max, defaults to None, in which case all data is loaded
+            data_name, (:obj:`str`): path to the data (in the h5) without the prepended scan id
+            scan_ids (:obj:`str`): scan ids to load, e.g 1.1, 2.1 etc...
+            threshold, (:obj:`int` or :obj:'str'): background subtraction value or string 'auto' in which
+                case a default background estimation is performed and subtracted. Defaults to None, in which
+                case no background is subtracted.
+            roi (:obj:`tuple` or :obj:'int'): row_min row_max and column_min and column_max, defaults to None, in which case all data is loaded
+            verbose (:obj:`bool): Print loading progress or not.
         """
-        layer_stack_mean = []
-        layer_stack_covariance = []
-        layer_positions = []
-        for args, scan_id in zip(reader_args, scan_ids):
-            print("read in scan ", scan_id)
-            self.reader(args, scan_id, roi)
-            if threshold:
-                self.threshold(threshold)
-            self.moments()
-            layer_positions.append(scan_id)
-            layer_stack_mean.append(self.mean)
-            layer_stack_covariance.append(self.covariance)
-        self.layer_stack_mean = np.array(layer_stack_mean)
-        self.layer_stack_covariance = np.array(layer_stack_covariance)
-        self.layer_positions = np.array(layer_positions)
-        print("finished!")
+        mean_3d = []
+        covariance_3d = []
+        tot_time = 0
+        for i, scan_id in enumerate(scan_ids):
+
+            t1 = time.perf_counter()
+
+            if verbose:
+                print(
+                    "\nREADING SCAN: "
+                    + str(i + 1)
+                    + " out of totally "
+                    + str(len(scan_ids))
+                    + " scans"
+                )
+            self.load_scan(reader_args, scan_id, roi)
+
+            if threshold is not None:
+                if threshold == "auto":
+                    if verbose:
+                        print(
+                            "    Subtracting estimated background for scan id "
+                            + str(scan_id)
+                            + " ..."
+                        )
+                    _threshold = self.estimate_background()
+                    self.threshold(_threshold)
+                else:
+                    if verbose:
+                        print(
+                            "    Subtracting fixed background value="
+                            + str(threshold)
+                            + " for scan id "
+                            + str(scan_id)
+                            + " ..."
+                        )
+                    self.threshold(threshold)
+
+            if verbose:
+                print("    Computing moments for scan id " + str(scan_id) + " ...")
+
+            mean, covariance = self.moments()
+
+            if verbose:
+                print(
+                    "    Concatenating to 3D volume for scan id "
+                    + str(scan_id)
+                    + " ..."
+                )
+            mean_3d.append(mean)
+            covariance_3d.append(covariance)
+
+            t2 = time.perf_counter()
+            tot_time += t2 - t1
+
+            estimated_time_left = str((tot_time / (i + 1)) * (len(scan_ids) - i - 1))
+            if verbose:
+                print("    Estimated time left is : " + estimated_time_left + " s")
+
+        self.mean_3d = np.array(mean_3d)
+        self.covariance_3d = np.array(covariance_3d)
+
+        if verbose:
+            print("\ndone! Total time was : " + str(tot_time) + " s")
+
+        return self.mean_3d, self.covariance_3d
+
+    def to_paraview(self, file):
+        """Write moment maps to paraview readable format for 3D visualisation.
+
+        The written data array will have attributes as:
+            cov_11, cov_12, (cov_13), cov_22, (cov_23, cov_33) : Elements of covariance matrix.
+            mean_1, mean_2, (mean_3) : The first moments in each dimension.
+        Here 1 signifies the self.motors[0] dimension while 2 is in self.motors[2], (and
+        3 in self.motors[3], when the scan is 3D)
+
+        NOTE: Requires that 3D moment maps have been compiled via compile_layers().
+
+        Args:
+            file (:obj:`string`): Absolute path ending with desired filename.
+
+        """
+
+        dim = np.array(self.mean_3d.shape)[-1]
+        s, a, b = np.array(self.mean_3d.shape)[0:3]
+        sg = np.linspace(0, s, s)
+        ag = np.linspace(0, a, a)
+        bg = np.linspace(0, b, b)
+        mesh = np.meshgrid(sg, ag, bg, indexing="ij")
+        points = np.array([x.flatten() for x in mesh])
+        N = points.shape[1]
+        cells = [("vertex", np.array([[i] for i in range(N)]))]
+
+        if len(file.split(".")) == 1:
+            filename = file + ".xdmf"
+        else:
+            filename = file
+
+        point_data = {}
+        for i in range(dim):
+            point_data["mean_" + str(i + 1)] = self.mean_3d[:, :, :, i].flatten()
+            for j in range(i, dim):
+                point_data["cov_" + str(i + 1) + str(j + 1)] = self.covariance_3d[
+                    :, :, :, i, j
+                ].flatten()
+
+        meshio.Mesh(
+            points.T,
+            cells,
+            point_data=point_data,
+        ).write(filename)
 
 
 if __name__ == "__main__":
-    path_to_data, _, _ = darling.assets.mosaicity_scan()
-    reader = darling.reader.MosaScan(
-        path_to_data,
-        ["instrument/chi/value", "instrument/diffrz/data"],
-        motor_precision=[3, 3],
-    )
-
-    data_name = "instrument/pco_ff/image"
-    dset = darling.DataSet(reader)
-    dset.load_scan(data_name, scan_id="1.1", roi=None)
-
-    # path_to_data, _, _ = darling.assets.energy_scan()
-    # data_name = "instrument/pco_ff/data"
-    # reader = darling.reader.EnergyScan(
-    # path_to_data,
-    # ["instrument/positioners/ccmth", "instrument/chi/value"],
-    # motor_precision=[4, 4],
-    # )
-    # dset = darling.DataSet(reader)
-
-    # dset.load_scan(data_name, scan_id="1.1", roi=None)
-
-    background = dset.estimate_background()
-    dset.subtract(background)
-    mean, covariance = dset.moments()
-
-    #dset.plot.mean()
-    #dset.plot.covariance()
-    #dset.plot.misorientation()
-    dset.plot.mosaicity()
+    pass

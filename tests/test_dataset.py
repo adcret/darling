@@ -129,6 +129,80 @@ class TestDataSet(unittest.TestCase):
                 fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
                 plt.tight_layout()
                 plt.show()
+    
+    def test_compile_layers(self):
+
+        # test that the mosa reader will stack layers
+        path_to_data, _, _ = darling.assets.mosaicity_scan()
+        reader = darling.reader.MosaScan(
+            path_to_data,
+            ["instrument/chi/value", "instrument/diffrz/data"],
+            motor_precision=[3, 3],
+        )
+
+        data_name = "instrument/pco_ff/image"
+        dset_mosa = darling.DataSet(reader)
+
+        mean_3d, cov_3d = dset_mosa.compile_layers(
+            data_name, scan_ids=["1.1", "2.1"], verbose=False
+        )
+
+        self.assertEqual(mean_3d.shape[0], 2)
+        self.assertEqual(len(mean_3d.shape), 4)
+        self.assertEqual(cov_3d.shape[0], 2)
+        self.assertEqual(len(cov_3d.shape), 5)
+
+        # test that the energy reader can stack layers.
+        path_to_data, _, _ = darling.assets.energy_scan()
+        data_name = "instrument/pco_ff/data"
+        reader = darling.reader.EnergyScan(
+        path_to_data,
+        ["instrument/positioners/ccmth", "instrument/chi/value"],
+        motor_precision=[4, 4],
+        )
+        dset_energy = darling.DataSet(reader)
+        mean_3d, cov_3d = dset_energy.compile_layers(
+            data_name, scan_ids=["1.1", "2.1"], verbose=False
+        )
+
+        self.assertEqual(mean_3d.shape[0], 2)
+        self.assertEqual(len(mean_3d.shape), 4)
+        self.assertEqual(cov_3d.shape[0], 2)
+        self.assertEqual(len(cov_3d.shape), 5)
+
+    def test_as_paraview(self):
+        path_to_data, _, _ = darling.assets.mosaicity_scan()
+        reader = darling.reader.MosaScan(
+            path_to_data,
+            ["instrument/chi/value", "instrument/diffrz/data"],
+            motor_precision=[3, 3],
+        )
+
+        data_name = "instrument/pco_ff/image"
+        dset_mosa = darling.DataSet(reader)
+
+        mean_3d, cov_3d = dset_mosa.compile_layers(
+            data_name, scan_ids=["1.1", "2.1"], verbose=False
+        )
+
+        filename = os.path.join(darling.assets.path(), 'saves', 'mosa_stack')
+        dset_mosa.to_paraview(filename)
+
+        path_to_data, _, _ = darling.assets.energy_scan()
+        data_name = "instrument/pco_ff/data"
+        reader = darling.reader.EnergyScan(
+        path_to_data,
+        ["instrument/positioners/ccmth", "instrument/chi/value"],
+        motor_precision=[4, 4],
+        )
+        dset_energy = darling.DataSet(reader)
+        mean_3d, cov_3d = dset_energy.compile_layers(
+            data_name, scan_ids=["1.1", "2.1"], verbose=False
+        )
+
+        filename = os.path.join(darling.assets.path(), 'saves', 'energy_stack')
+        dset_energy.to_paraview(filename)
+
 
     def check_data(self, dset):
         self.assertTrue(dset.data.dtype == np.uint16)

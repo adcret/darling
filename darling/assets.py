@@ -10,6 +10,9 @@ import numpy as np
 _root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
 _asset_path = os.path.join(_root_path, "assets")
 
+def path():
+    return _asset_path
+
 
 def mosaicity_scan(scan_id="1.1"):
     """load a (tiny) part of a 2d mosaicity scan collected at the ESRF id03.
