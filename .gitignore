@@ -54,6 +54,10 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# profiling stuff
+tmp_profile_dump
+
+
 # Translations
 *.mo
 *.pot
@@ -84,6 +88,9 @@ target/
 # IPython
 profile_default/
 ipython_config.py
+
+# editor stuff
+.vscode*
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
