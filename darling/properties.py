@@ -207,6 +207,10 @@ def _check_data(data, coordinates):
         ), "3D scan data array must be of shape=(a, b, n, m, o)"
     else:
         raise ValueError("Coordinate array must be 2D or 3D")
+    for i,c in enumerate(coordinates):
+        if not isinstance(c, np.ndarray):
+            raise ValueError("Coordinate array must be a numpy array")
+        assert len(c)==data.shape[2+i], "coordinate arrays do not match data shape"
 
 def _get_point_mesh(coordinates):
     mesh = np.meshgrid(*coordinates, indexing="ij")
