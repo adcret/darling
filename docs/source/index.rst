@@ -16,7 +16,7 @@ properties
 DataSet
 ======================================
 
-.. autoclass:: darling.DataSet
+.. automodule:: darling._dataset
     :members:
     :show-inheritance:
 

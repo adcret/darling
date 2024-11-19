@@ -26,8 +26,9 @@ def mosaicity_scan(scan_id="1.1"):
     Returns:
         data_path (:obj:`str`): absolute path to h5 file.
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) with intensity data. data[:,:,i,j] is a noisy
-            detector image in type uint16 for phi and chi at index i and j respectively.
+        detector image in type uint16 for phi and chi at index i and j respectively.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning phi and chi angular coordinates.
+
     """
     data_path = os.path.join(
         _asset_path, "example_data", "mosa_scan_id03", "mosa_scan.h5"
@@ -61,8 +62,9 @@ def energy_scan(scan_id="1.1"):
     Returns:
         data_path (:obj:`str`): absolute path to h5 file.
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) with intensity data. data[:,:,i,j] is a noisy
-            detector image in type uint16 for energy and chi at index i and j respectively.
+        detector image in type uint16 for energy and chi at index i and j respectively.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning energy and chi angular coordinates.
+
     """
     data_path = os.path.join(
         _asset_path,
@@ -94,8 +96,9 @@ def gaussian_blobs(N=32, m=9):
 
     Returns:
         data (:obj:`numpy array`):  Array of shape=(n, m, a, b) with intensity data. data[:,:,i,j] is a noisy
-            detector image in type uint16 for motor x and y at index i and j respectively.
+        detector image in type uint16 for motor x and y at index i and j respectively.
         coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 continaning x and y coordinates.
+
     """
     x = y = np.linspace(-1, 1, m, dtype=np.float32)
     sigma0 = (x[1] - x[0]) / 3.0

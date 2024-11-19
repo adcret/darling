@@ -209,17 +209,16 @@ class DataSet(object):
         self.mean_3d, self.covariance_3d = None, None
 
     def load_scan(self, args, scan_id, roi=None):
-        """Load a scan into RAM.
+        """Load a scan into RM.
 
         NOTE: Input args should match the darling.reader.Reader used, however it was implemented.
 
         Args:
             args, (:obj: `tuple` or other): Depending on the reader implementation this is either
-                a tuple of arguments in which case the reader is called as:
-                    self.reader(*args, scan_id, roi)
-                or, alternatively, this is a single argument in which case the reader is called as
-                    self.reader(args, scan_id, roi)
-                the provided reader must be compatible with one of these call signatures.
+                a tuple of arguments in which case the reader is called as: self.reader(\*args, scan_id, roi)
+                or, alternatively, this is a single argument in which case the reader is called 
+                as self.reader(args, scan_id, roi) the provided reader must be compatible with one
+                of these call signatures.
             scan_id (:obj:`str`): scan id to load from, these are internal keys to diffirentiate
                 layers.
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
@@ -297,8 +296,8 @@ class DataSet(object):
 
         Args:
             threshold (:obj:`int`):  a summed count value above which the sample is defined.
-            erosion_iterations (:obj:`int`):  Number of times to erode the mask using a 2,2 structure.
-            dilation_iterations (:obj:`int`):  Number of times to dilate the mask using a 2,2 structure.
+            erosion_iterations (:obj:`int`): Number of times to erode the mask using a 2,2 structure.
+            dilation_iterations (:obj:`int`): Number of times to dilate the mask using a 2,2 structure.
             fill_holes (:obj:`bool`):  Fill enclosed holes in the final mask.
 
         Returns:
@@ -322,20 +321,22 @@ class DataSet(object):
         """Sequentially load a series of scans and assemble the 3D moment maps.
 
         this loads the mosa data array with shape a,b,m,n,(o) where a,b are the detector dimension and
-        m,n,(o) are the motor dimensions as ordered in the self.motor_names.
+        m,n,(o) are the motor dimensions as ordered in the `self.motor_names`.
 
         NOTE: This function will load data sequentially and compute moments on the fly. While all
-        moment maps are stored and concatenated, only one scan (the raw 4d or 5d data) is keept in
+        moment maps are stored and concatenated, only one scan (the raw 4d or 5d data) is kept in
         memory at a time to enhance RAM performance.
 
         Args:
-            data_name, (:obj:`str`): path to the data (in the h5) without the prepended scan id
+            data_name (:obj:`str`): path to the data (in the h5) without the prepended scan id
             scan_ids (:obj:`str`): scan ids to load, e.g 1.1, 2.1 etc...
-            threshold, (:obj:`int` or :obj:'str'): background subtraction value or string 'auto' in which
+            threshold (:obj:`int` or :obj:`str`): background subtraction value or string 'auto' in which
                 case a default background estimation is performed and subtracted. Defaults to None, in which
                 case no background is subtracted.
-            roi (:obj:`tuple` or :obj:'int'): row_min row_max and column_min and column_max, defaults to None, in which case all data is loaded
-            verbose (:obj:`bool): Print loading progress or not.
+            roi (:obj:`tuple` or :obj:`int`): row_min row_max and column_min and column_max, defaults to None, 
+                in which case all data is loaded 
+            verbose (:obj:`bool`): Print loading progress or not.
+
         """
         mean_3d = []
         covariance_3d = []
@@ -408,8 +409,10 @@ class DataSet(object):
         """Write moment maps to paraview readable format for 3D visualisation.
 
         The written data array will have attributes as:
+
             cov_11, cov_12, (cov_13), cov_22, (cov_23, cov_33) : Elements of covariance matrix.
             mean_1, mean_2, (mean_3) : The first moments in each dimension.
+
         Here 1 signifies the self.motors[0] dimension while 2 is in self.motors[2], (and
         3 in self.motors[3], when the scan is 3D)
 
