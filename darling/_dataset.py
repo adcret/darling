@@ -175,7 +175,6 @@ class _Visualizer(object):
 
     
         mean = self.dset.mean.copy()
-
     
         mean[:, :, 0] = np.clip(mean[:, :, 0], motor1_min, motor1_max)
         mean[:, :, 1] = np.clip(mean[:, :, 1], motor2_min, motor2_max)
@@ -203,8 +202,6 @@ class _Visualizer(object):
 
         RGBA_scaled = np.dstack((RGB_scaled, alpha_channel))
 
-
-        # Plotting
         plt.style.use("dark_background")
         fig, axs = plt.subplots(
             1, 2, figsize=(12, 9), gridspec_kw={"width_ratios": [3, 1]}
@@ -214,26 +211,23 @@ class _Visualizer(object):
             fontsize=22,
         )
 
-        # Plot the mosaicity map
         axs[0].imshow(RGBA_scaled)
         axs[0].set_title(r"Mosaicity Map", fontsize=14)
         axs[0].set_xlabel(self.xlabel, fontsize=14)
         axs[0].set_ylabel(self.ylabel, fontsize=14)
 
-        # Plot the colormap
         axs[1].imshow(colormap)
         axs[1].set_xlabel(self.motor_xlabel, fontsize=14)
         axs[1].set_ylabel(self.motor_ylabel, fontsize=14)
         axs[1].set_title(r"Color Map", fontsize=14)
 
-        # Define ticks and labels for motor ranges
         chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-        chi_labels = np.linspace(motor1_min, motor1_max, 5)  # Use motor ranges for ticks
+        chi_labels = np.linspace(motor1_min, motor1_max, 5)  
         axs[1].set_xticks(chiTicks)
         axs[1].set_xticklabels([f"{chi:.3f}" for chi in chi_labels])
 
         phiTicks = np.linspace(0, colormap.shape[0] - 1, 5)
-        phi_labels = np.linspace(motor2_min, motor2_max, 5)  # Use motor ranges for ticks
+        phi_labels = np.linspace(motor2_min, motor2_max, 5)  
         axs[1].set_yticks(phiTicks)
         axs[1].set_yticklabels([f"{phi:.3f}" for phi in phi_labels])
 
