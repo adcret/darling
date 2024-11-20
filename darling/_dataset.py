@@ -58,7 +58,7 @@ class _Visualizer(object):
 
     def covariance(self, mask=None):
         """ 
-        Plot the covariance matrix of the data set.
+        Plot the covariance matrix of the data set. Using RGBA colormap to plot the covariance matrix with transparency.
 
         Args:
             mask (:obj:`numpy array`): A boolean mask with the same shape as the data set. If provided, the
@@ -70,28 +70,24 @@ class _Visualizer(object):
             "Covariance Map \nsecond moment around motor coordinates", fontsize=22
         )
         im_ratio = self.dset.covariance.shape[0] / self.dset.covariance.shape[1]
-        
-        # Prepare the mask
+
         if mask is not None:
-            mask = mask.astype(bool)  # Ensure mask is boolean
+            mask = mask.astype(bool) 
 
         for i in range(2):
             for j in range(2):
                 data = self.dset.covariance[:, :, i, j]
-                
-                # Apply mask if provided
-                if mask is not None:
-                    alpha_channel = np.where(mask, 1, 0)  # Transparent where mask is False
-                    rgba_data = plt.cm.magma(data)  # Convert to RGBA using colormap
-                    rgba_data[..., 3] = alpha_channel  # Set alpha channel
-                else:
-                    rgba_data = plt.cm.magma(data)  # Use default RGBA without alpha changes
 
-                # Plot with transparency
+                if mask is not None:
+                    alpha_channel = np.where(mask, 1, 0) 
+                    rgba_data = plt.cm.magma(data)  
+                    rgba_data[..., 3] = alpha_channel  
+                else:
+                    rgba_data = plt.cm.magma(data) 
+
                 im = ax[i, j].imshow(rgba_data, interpolation='nearest')
                 fig.colorbar(im, ax=ax[i, j], fraction=0.046 * im_ratio, pad=0.04)
-                
-                # Add labels
+
                 ax[i, j].set_title(
                     f"Covar[{self.labels[i]}, {self.labels[j]}]", fontsize=14
                 )
