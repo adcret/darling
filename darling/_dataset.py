@@ -58,6 +58,13 @@ class _Visualizer(object):
         plt.show()
 
     def covariance(self, mask=None):
+        """ 
+        Plot the covariance matrix of the data set.
+
+        Args:
+            mask (:obj:`numpy array`): A boolean mask with the same shape as the data set. If provided, the
+                covariance matrix will be plotted with transparency according to the mask values. Defaults to None.
+        """
         plt.style.use("dark_background")
         fig, ax = plt.subplots(2, 2, figsize=(18, 18), sharex=True, sharey=True)
         fig.suptitle(
@@ -134,7 +141,7 @@ class _Visualizer(object):
             (
                 angles,  # HUE (the actual color)
                 radius,  # SATURATION (how saturated the color is)
-                np.ones(angles.shape)*0.75,  # VALUE. (white to black)
+                np.ones(angles.shape),  # VALUE. (white to black)
             ),
             axis=2,
         )
@@ -155,18 +162,26 @@ class _Visualizer(object):
         return colormap
 
     def mosaicity(self, mask = None):
-        # Use motor ranges for the color map
+        """
+        Plot the mosaicity map. This takes the motor limits in order to avoid issues with zeros in the data.
+        Sets the blue channel to 0.75 to make the mosaicity map more readable. The colormap is plotted on the right based on the motor limits.
+
+        Args:
+            mask (:obj:`numpy array`): A boolean mask with the same shape as the data set. If provided, the
+                mosaicity map will be plotted with transparency according to the mask values. Defaults to None.
+    
+        """
         motor1_min, motor1_max = self.dset.motors[0].min(), self.dset.motors[0].max()
         motor2_min, motor2_max = self.dset.motors[1].min(), self.dset.motors[1].max()
 
-        # Calculate Mosa Imager
+    
         mean = self.dset.mean.copy()
 
-        # Clamp mean values to motor ranges
+    
         mean[:, :, 0] = np.clip(mean[:, :, 0], motor1_min, motor1_max)
         mean[:, :, 1] = np.clip(mean[:, :, 1], motor2_min, motor2_max)
 
-        # Normalize to range [0, 1]
+        
         chi_scaled = (mean[:, :, 0] - motor1_min) / (motor1_max - motor1_min)
         phi_scaled = (mean[:, :, 1] - motor2_min) / (motor2_max - motor2_min)
 
@@ -177,13 +192,13 @@ class _Visualizer(object):
 
 
         mosa = np.stack((chi_scaled, phi_scaled, np.ones_like(chi_scaled)), axis=-1)
-        mosa[np.isnan(mosa)] = 0  # Handle NaN values
-        mosa[mosa > 1] = 1  # Clip values > 1
-        mosa[mosa < 0] = 0  # Clip values < 0
+        mosa[np.isnan(mosa)] = 0  
+        mosa[mosa > 1] = 1  
+        mosa[mosa < 0] = 0  
         RGB_scaled = hsv_to_rgb(mosa)
         RGB_scaled[..., 2] *= 0.75  
         colormap = self._hsv_colormap()
-        #colormap[..., 2] *= 0.75
+        colormap[..., 2] *= 0.75
 
         alpha_channel = np.where(np.isnan(chi_scaled), 0, 1)
 
@@ -499,6 +514,7 @@ class DataSet(object):
             point_data=point_data,
         ).write(filename)
 
+
     @numba.guvectorize(
         [
             (numba.uint16[:, :, :], 
@@ -535,6 +551,11 @@ class DataSet(object):
     def correct_shifts(self, num_subvolumes=5, subvolume_size=None):
         """
         Optimized shift correction using FFT-based cross-correlation and Numba for shifting.
+        Based on Felix Frankus code using correlate instead of fftconvolve.
+
+        Args:
+            num_subvolumes (:obj:`int`): Number of subvolumes to use for shift estimation.
+            subvolume_size (:obj:`tuple` of :obj:`int`): Size of the subvolume used for shift estimation.
         """
         reference_image = self.data[..., 0].astype(np.uint16)
         corrected_data = np.zeros_like(self.data, dtype=np.uint16)
