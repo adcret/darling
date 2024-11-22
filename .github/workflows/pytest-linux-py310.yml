@@ -26,16 +26,16 @@ jobs:
       run: |
         python --version
         conda install python=3.10.13
-        conda install -c conda-forge matplotlib numpy meshio scipy numba hdf5plugin h5py
+        conda install conda-forge::matplotlib conda-forge::numpy conda-forge::meshio conda-forge::scipy conda-forge::numba conda-forge::hdf5plugin conda-forge::h5py
         python -m pip install .
     - name: Lint with flake8
       run: |
-        conda install flake8
+        conda install conda-forge::flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        conda install pytest
+        conda install conda-forge::pytest
         pytest
