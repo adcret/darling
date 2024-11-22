@@ -2,13 +2,37 @@ DARLING
 ------------------------------------
 the python **[D]ark** field x-ray microscopy **[A]nalysis** & **[R]econstruction** **[L]ibrary** for rapid data **[IN]spection** & **[G]raphing**
 
-Darling is written and maintained by: 
+.. image:: https://img.shields.io/badge/platform-cross--platform-brightgreen.svg
+   :target: https://shields.io/
+   :alt: cross-platform
 
-Axel Henningsson,
-Felix Tristan Frankus and 
-Adam André William Cretton, 
+.. image:: https://img.shields.io/badge/code-pure%20python-blue.svg
+   :target: https://www.python.org/
+   :alt: pure python
 
-affiliated with DTU. The core ideas of this library was originally written during a beamtime at ESRF id03D. If you use this code in your research we ask that you cite this repository.
+.. image:: https://github.com/AxelHenningsson/darling/actions/workflows/pytest-linux-py310.yml/badge.svg
+   :target: https://github.com/AxelHenningsson/darling/actions/workflows/pytest-linux-py310.yml
+   :alt: tests ubuntu-linux
+
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+   :alt: code style black
+
+.. image:: https://img.shields.io/badge/docs-sphinx-blue.svg
+   :target: https://www.sphinx-doc.org/
+   :alt: Sphinx documentation
+
+Authors
+------------------------------------
+``darling`` is written and maintained by: 
+
+`Axel Henningsson <https://github.com/AxelHenningsson>`_,
+`Felix Tristan Frankus <https://github.com/adcret>`_ and
+`Adam André William Cretton <https://github.com/fetrifra>`_
+
+affiliated with DTU. The core ideas of this library was originally written during a beamtime at ESRF id03D. 
+
+Until an associated journal publication is available, if you use this code in your research, we ask that you cite this repository.
 
 Usecase
 ------------------------------------
