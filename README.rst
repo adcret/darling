@@ -3,7 +3,7 @@ DARLING
 the python **[D]ark** field x-ray microscopy **[A]nalysis** & **[R]econstruction** **[L]ibrary** for rapid data **[IN]spection** & **[G]raphing**
 
 .. image:: https://img.shields.io/badge/platform-cross--platform-brightgreen.svg
-   :target: https://shields.io/
+   :target: https://www.python.org/
    :alt: cross-platform
 
 .. image:: https://img.shields.io/badge/code-pure%20python-blue.svg
@@ -19,7 +19,7 @@ the python **[D]ark** field x-ray microscopy **[A]nalysis** & **[R]econstruction
    :alt: code style black
 
 .. image:: https://img.shields.io/badge/docs-sphinx-blue.svg
-   :target: https://www.sphinx-doc.org/
+   :target: https://axelhenningsson.github.io/darling/
    :alt: Sphinx documentation
 
 Authors
