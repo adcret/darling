@@ -62,10 +62,49 @@ Darling hosts documentation at https://axelhenningsson.github.io/darling/
 
 Installation
 ------------------------------------
-From source
+From source the key is simply to clone and pip install
 
 .. code-block:: bash
 
     git clone https://github.com/AxelHenningsson/darling.git
     cd darling
     pip install -e .
+
+In general, you probably want to install in a fresh virtual environment as
+
+.. code-block:: bash
+
+   python3 -m venv .venv_darling
+   source .venv_darling/bin/activate
+   git clone https://github.com/AxelHenningsson/darling.git
+   cd darling
+   pip install -e .
+
+use 
+
+.. code-block:: bash
+
+   source .venv_darling/bin/activate
+
+whenever you want to activate the environment. To add your env into a jupyter kernel such that
+you can use it in an interactive notebook you may add the following two commands:
+
+.. code-block:: bash
+
+   pip install ipykernel
+   python -m ipykernel install --user --name=darling
+
+The following snippet has been verified to work on the ESRF slurm cluster 19 Dec 2024 in a browser terminal:
+
+.. code-block:: bash
+
+   python3 -m venv .venv_darling
+   source .venv_darling/bin/activate
+   git clone https://github.com/AxelHenningsson/darling.git
+   cd darling
+   pip install -e .
+   pip install ipykernel
+   python -m ipykernel install --user --name=darling
+
+
+
