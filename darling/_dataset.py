@@ -382,8 +382,8 @@ class DataSet(object):
             data_name (:obj:`str`): path to the data (in the h5) without the prepended scan id
             scan_ids (:obj:`str`): scan ids to load, e.g 1.1, 2.1 etc...
             threshold (:obj:`int` or :obj:`str`): background subtraction value or string 'auto' in which
-                case a default background estimation is performed and subtracted. Defaults to None, in which
-                case no background is subtracted.
+                case a default background estimation is performed and subtracted. 
+                Defaults to None, in which case no background is subtracted.
             roi (:obj:`tuple` or :obj:`int`): row_min row_max and column_min and column_max, defaults to None, 
                 in which case all data is loaded 
             verbose (:obj:`bool`): Print loading progress or not.
