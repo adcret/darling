@@ -57,12 +57,12 @@ class _Visualizer(object):
         plt.show()
 
     def covariance(self, mask=None):
-        """ 
+        """
         Plot the covariance matrix of the data set. Using RGBA colormap to plot the covariance matrix with transparency.
 
         Args:
-            mask (:obj:`numpy array`): A boolean mask with the same shape as the data set. If provided, the
-                covariance matrix will be plotted with transparency according to the mask values. Defaults to None.
+            mask (:obj:`numpy array`): A binary mask with the same shape as the data set. If provided, the
+                covariance matrix will be plotted where the mask = 1. Defaults to None.
         """
         plt.style.use("dark_background")
         fig, ax = plt.subplots(2, 2, figsize=(18, 18), sharex=True, sharey=True)
@@ -71,21 +71,13 @@ class _Visualizer(object):
         )
         im_ratio = self.dset.covariance.shape[0] / self.dset.covariance.shape[1]
 
-        if mask is not None:
-            mask = mask.astype(bool) 
-
         for i in range(2):
             for j in range(2):
                 data = self.dset.covariance[:, :, i, j]
 
-                if mask is not None:
-                    alpha_channel = np.where(mask, 1, 0) 
-                    rgba_data = plt.cm.magma(data)  
-                    rgba_data[..., 3] = alpha_channel  
-                else:
-                    rgba_data = plt.cm.magma(data) 
-
-                im = ax[i, j].imshow(rgba_data, interpolation='nearest')
+                _data = np.where(mask, data, np.nan) if mask is not None else data
+        
+                im = ax[i, j].imshow(_data, interpolation="nearest", cmap="magma")
                 fig.colorbar(im, ax=ax[i, j], fraction=0.046 * im_ratio, pad=0.04)
 
                 ax[i, j].set_title(
@@ -156,41 +148,37 @@ class _Visualizer(object):
         colormap = hsv_to_rgb(hsv_key)
         return colormap
 
-    def mosaicity(self, mask = None):
+    def mosaicity(self, mask=None):
         """
         Plot the mosaicity map. This takes the motor limits in order to avoid issues with zeros in the data.
         Sets the blue channel to 0.75 to make the mosaicity map more readable. The colormap is plotted on the right based on the motor limits.
 
         Args:
-            mask (:obj:`numpy array`): A boolean mask with the same shape as the data set. If provided, the
-                mosaicity map will be plotted with transparency according to the mask values. Defaults to None.
-    
+            mask (:obj:`numpy array`): A 2D binary mask with the same shape as the data set. If provided, the
+                mosaicity map will be plotted where the mask = 1. Defaults to None.
+
         """
         motor1_min, motor1_max = self.dset.motors[0].min(), self.dset.motors[0].max()
         motor2_min, motor2_max = self.dset.motors[1].min(), self.dset.motors[1].max()
 
-    
         mean = self.dset.mean.copy()
-    
+
         mean[:, :, 0] = np.clip(mean[:, :, 0], motor1_min, motor1_max)
         mean[:, :, 1] = np.clip(mean[:, :, 1], motor2_min, motor2_max)
 
-        
         chi_scaled = (mean[:, :, 0] - motor1_min) / (motor1_max - motor1_min)
         phi_scaled = (mean[:, :, 1] - motor2_min) / (motor2_max - motor2_min)
 
         if mask is not None:
-            mask = mask.astype(bool) 
             chi_scaled = np.where(mask, chi_scaled, np.nan)
             phi_scaled = np.where(mask, phi_scaled, np.nan)
 
-
         mosa = np.stack((chi_scaled, phi_scaled, np.ones_like(chi_scaled)), axis=-1)
-        mosa[np.isnan(mosa)] = 0  
-        mosa[mosa > 1] = 1  
-        mosa[mosa < 0] = 0  
+        mosa[np.isnan(mosa)] = 0
+        mosa[mosa > 1] = 1
+        mosa[mosa < 0] = 0
         RGB_scaled = hsv_to_rgb(mosa)
-        RGB_scaled[..., 2] *= 0.75  
+        RGB_scaled[..., 2] *= 0.75
         colormap = self._hsv_colormap()
         colormap[..., 2] *= 0.75
 
@@ -218,19 +206,17 @@ class _Visualizer(object):
         axs[1].set_title(r"Color Map", fontsize=14)
 
         chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-        chi_labels = np.linspace(motor1_min, motor1_max, 5)  
+        chi_labels = np.linspace(motor1_min, motor1_max, 5)
         axs[1].set_xticks(chiTicks)
         axs[1].set_xticklabels([f"{chi:.3f}" for chi in chi_labels])
 
         phiTicks = np.linspace(0, colormap.shape[0] - 1, 5)
-        phi_labels = np.linspace(motor2_min, motor2_max, 5)  
+        phi_labels = np.linspace(motor2_min, motor2_max, 5)
         axs[1].set_yticks(phiTicks)
         axs[1].set_yticklabels([f"{phi:.3f}" for phi in phi_labels])
 
         plt.tight_layout()
         plt.show()
-
-
 
 
 class DataSet(object):
@@ -263,7 +249,7 @@ class DataSet(object):
         Args:
             args, (:obj: `tuple` or other): Depending on the reader implementation this is either
                 a tuple of arguments in which case the reader is called as: self.reader(\*args, scan_id, roi)
-                or, alternatively, this is a single argument in which case the reader is called 
+                or, alternatively, this is a single argument in which case the reader is called
                 as self.reader(args, scan_id, roi) the provided reader must be compatible with one
                 of these call signatures.
             scan_id (:obj:`str`): scan id to load from, these are internal keys to diffirentiate
@@ -278,8 +264,6 @@ class DataSet(object):
         else:
             self.data, self.motors = self.reader(args, scan_id, roi)
 
-
-
     def substract(self, value):
         """Subtract a fixed integer value form the data. Protects against uint16 sign flips.
 
@@ -289,7 +273,6 @@ class DataSet(object):
         """
         self.data.clip(value, None, out=self.data)
         self.data -= value
-
 
     def estimate_background(self):
         """Automatic background correction based on image statistics.
@@ -310,7 +293,6 @@ class DataSet(object):
             noise = noise[np.abs(noise) < mu + 2 * 3.891 * std]  # 99.99% confidence
         background = np.max(noise)
         return background
-    
 
     def moments(self):
         """Compute first and second moments.
@@ -382,10 +364,10 @@ class DataSet(object):
             data_name (:obj:`str`): path to the data (in the h5) without the prepended scan id
             scan_ids (:obj:`str`): scan ids to load, e.g 1.1, 2.1 etc...
             threshold (:obj:`int` or :obj:`str`): background subtraction value or string 'auto' in which
-                case a default background estimation is performed and subtracted. 
+                case a default background estimation is performed and subtracted.
                 Defaults to None, in which case no background is subtracted.
-            roi (:obj:`tuple` or :obj:`int`): row_min row_max and column_min and column_max, defaults to None, 
-                in which case all data is loaded 
+            roi (:obj:`tuple` or :obj:`int`): row_min row_max and column_min and column_max, defaults to None,
+                in which case all data is loaded
             verbose (:obj:`bool`): Print loading progress or not.
 
         """
@@ -503,12 +485,9 @@ class DataSet(object):
             point_data=point_data,
         ).write(filename)
 
-
     @numba.guvectorize(
         [
-            (numba.uint16[:, :, :], 
-             numba.float32[:], 
-             numba.uint16[:, :, :]),
+            (numba.uint16[:, :, :], numba.float32[:], numba.uint16[:, :, :]),
         ],
         "(x,y,z),(d)->(x,y,z)",
         nopython=True,
@@ -533,10 +512,15 @@ class DataSet(object):
                     new_y = y + shift_y
                     new_z = z + shift_z
 
-                    if 0 <= new_x < x_size and 0 <= new_y < y_size and 0 <= new_z < z_size:
+                    if (
+                        0 <= new_x < x_size
+                        and 0 <= new_y < y_size
+                        and 0 <= new_z < z_size
+                    ):
                         output[new_x, new_y, new_z] = image[x, y, z]
                     else:
-                        output[x, y, z] = 0 
+                        output[x, y, z] = 0
+
     def correct_shifts(self, num_subvolumes=5, subvolume_size=None):
         """
         Optimized shift correction using FFT-based cross-correlation and Numba for shifting.
@@ -563,19 +547,29 @@ class DataSet(object):
                     np.random.randint(0, ref_dim - sub_dim)
                     for ref_dim, sub_dim in zip(reference_image.shape, subvolume_size)
                 ]
-                end_idx = [start + size for start, size in zip(start_idx, subvolume_size)]
+                end_idx = [
+                    start + size for start, size in zip(start_idx, subvolume_size)
+                ]
 
-                subvol_ref = reference_image[start_idx[0]:end_idx[0],
-                                            start_idx[1]:end_idx[1],
-                                            start_idx[2]:end_idx[2]]
-                subvol_tgt = target_image[start_idx[0]:end_idx[0],
-                                        start_idx[1]:end_idx[1],
-                                        start_idx[2]:end_idx[2]]
+                subvol_ref = reference_image[
+                    start_idx[0] : end_idx[0],
+                    start_idx[1] : end_idx[1],
+                    start_idx[2] : end_idx[2],
+                ]
+                subvol_tgt = target_image[
+                    start_idx[0] : end_idx[0],
+                    start_idx[1] : end_idx[1],
+                    start_idx[2] : end_idx[2],
+                ]
 
-                correlation = fftconvolve(subvol_tgt.astype(np.float32), 
-                                        subvol_ref[::-1, ::-1, ::-1].astype(np.float32), 
-                                        mode="same")
-                max_corr_idx = np.unravel_index(np.argmax(correlation), correlation.shape)
+                correlation = fftconvolve(
+                    subvol_tgt.astype(np.float32),
+                    subvol_ref[::-1, ::-1, ::-1].astype(np.float32),
+                    mode="same",
+                )
+                max_corr_idx = np.unravel_index(
+                    np.argmax(correlation), correlation.shape
+                )
 
                 center = np.array(correlation.shape) // 2
                 shift_vector = np.array(max_corr_idx) - center

@@ -165,12 +165,12 @@ class EnergyScan(Reader):
     def _pad_h5_paths(self, data_name, motor_names):
         mnames = []
         for name in motor_names:
-            if not name.startswith('/'):
-                mnames.append('/'+ name)
+            if not name.startswith("/"):
+                mnames.append("/" + name)
             else:
                 mnames.append(name)
-        if not name.startswith('/'):
-            dname = '/'+  data_name
+        if not name.startswith("/"):
+            dname = "/" + data_name
         else:
             dname = data_name
         return dname, mnames
@@ -230,7 +230,7 @@ class EnergyScan(Reader):
         motors = [energy, chi]
 
         assert len(chi) == data.shape[3], "Potential motor drift in chi"
-        
+
         return data, motors
 
 
