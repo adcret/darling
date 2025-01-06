@@ -214,5 +214,28 @@ class TestDataSet(unittest.TestCase):
         self.assertTrue(len(dset.motors[0].shape) == 1)
         self.assertTrue(len(dset.motors[1].shape) == 1)
 
+def test_visualizer_mosaicity(self):
+    for reader, data_name in zip(self.readers, self.data_names):
+        dset = darling.DataSet(reader)
+        dset.load_scan(data_name, scan_id="1.1", roi=None)
+        
+        dset.moments()
+
+        dset.plot.mosaicity(use_motors=False)
+
+        dset.plot.mosaicity(use_motors=True)
+
+        mask = np.random.choice([True, False], size=dset.data.shape[:2])
+        dset.plot.mosaicity(use_motors=True, mask=mask)
+
+def test_visualizer_covariance_with_mask(self):
+    for reader, data_name in zip(self.readers, self.data_names):
+        dset = darling.DataSet(reader)
+        dset.load_scan(data_name, scan_id="1.1", roi=None)
+
+        dset.moments()
+
+        mask = np.random.choice([True, False], size=dset.data.shape[:2])
+        dset.plot.covariance(mask=mask)
 if __name__ == "__main__":
     unittest.main()
