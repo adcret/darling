@@ -6,9 +6,7 @@ import matplotlib.pyplot as plt
 import meshio
 import numpy as np
 import scipy.ndimage
-from scipy.signal import fftconvolve
 from matplotlib.colors import hsv_to_rgb
-import numba
 
 import darling
 
