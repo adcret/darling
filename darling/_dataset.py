@@ -540,7 +540,6 @@ class DataSet(object):
     def correct_shifts(self, num_subvolumes=5, subvolume_size=None):
         """
         Optimized shift correction using FFT-based cross-correlation and Numba for shifting.
-        Based on Felix Frankus code using correlate instead of fftconvolve.
 
         Args:
             num_subvolumes (:obj:`int`): Number of subvolumes to use for shift estimation.
