@@ -527,5 +527,92 @@ class DataSet(object):
         ).write(filename)
 
 
+        
+    @numba.guvectorize(
+        [
+            (numba.uint16[:, :, :], 
+             numba.float32[:], 
+             numba.uint16[:, :, :]),
+        ],
+        "(x,y,z),(d)->(x,y,z)",
+        nopython=True,
+        target="parallel",
+    )
+    def _shift(image, shift_vector, output):
+        """
+        3D image shifting.
+
+        Args:
+            image (:obj:`numpy array`): 3D array to shift.
+            shift_vector (:obj:`numpy array`): 3D shift vector.
+            output (:obj:`numpy array`): 3D output array for the shifted image.
+        """
+        shift_x, shift_y, shift_z = map(int, shift_vector)
+        x_size, y_size, z_size = image.shape
+
+        for x in range(x_size):
+            for y in range(y_size):
+                for z in range(z_size):
+                    new_x = x + shift_x
+                    new_y = y + shift_y
+                    new_z = z + shift_z
+
+                    if 0 <= new_x < x_size and 0 <= new_y < y_size and 0 <= new_z < z_size:
+                        output[new_x, new_y, new_z] = image[x, y, z]
+                    else:
+                        output[x, y, z] = 0 
+    def correct_shifts(self, num_subvolumes=5, subvolume_size=None):
+        """
+        Optimized shift correction using FFT-based cross-correlation and Numba for shifting.
+
+        Args:
+            num_subvolumes (:obj:`int`): Number of subvolumes to use for shift estimation.
+            subvolume_size (:obj:`tuple` of :obj:`int`): Size of the subvolume used for shift estimation.
+        """
+        reference_image = self.data[..., 0].astype(np.uint16)
+        corrected_data = np.zeros_like(self.data, dtype=np.uint16)
+        corrected_data[..., 0] = reference_image
+
+        if subvolume_size is None:
+            subvolume_size = tuple([int(0.1 * s) for s in reference_image.shape])
+        print("Subvolume size:", subvolume_size)
+
+        for i in range(1, self.data.shape[-1]):
+            target_image = self.data[..., i].astype(np.uint16)
+            shifts = []
+
+            for _ in range(num_subvolumes):
+                start_idx = [
+                    np.random.randint(0, ref_dim - sub_dim)
+                    for ref_dim, sub_dim in zip(reference_image.shape, subvolume_size)
+                ]
+                end_idx = [start + size for start, size in zip(start_idx, subvolume_size)]
+
+                subvol_ref = reference_image[start_idx[0]:end_idx[0],
+                                            start_idx[1]:end_idx[1],
+                                            start_idx[2]:end_idx[2]]
+                subvol_tgt = target_image[start_idx[0]:end_idx[0],
+                                        start_idx[1]:end_idx[1],
+                                        start_idx[2]:end_idx[2]]
+
+                correlation = fftconvolve(subvol_tgt.astype(np.float32), 
+                                        subvol_ref[::-1, ::-1, ::-1].astype(np.float32), 
+                                        mode="same")
+                max_corr_idx = np.unravel_index(np.argmax(correlation), correlation.shape)
+
+                center = np.array(correlation.shape) // 2
+                shift_vector = np.array(max_corr_idx) - center
+                shifts.append(shift_vector)
+
+            avg_shift = np.rint(np.mean(shifts, axis=0)).astype(np.float32)
+            print(f"Image {i}: Average shift:", avg_shift)
+
+            corrected_image = np.zeros_like(target_image, dtype=np.uint16)
+            self._shift(target_image, avg_shift, corrected_image)
+            corrected_data[..., i] = corrected_image
+
+        self.data = corrected_data
+        print("Shifts corrected.")
+
 if __name__ == "__main__":
     pass
