@@ -54,24 +54,38 @@ class _Visualizer(object):
         plt.tight_layout()
         plt.show()
 
-    def covariance(self):
+    def covariance(self, mask=None):
+        """
+        Plot the covariance matrix of the data set. Using RGBA colormap to plot the covariance matrix with transparency.
+
+        Args:
+            mask (:obj:`numpy array`): A binary mask with the same shape as the data set. If provided, the
+                covariance matrix will be plotted where the mask = 1. Defaults to None.
+        """
         plt.style.use("dark_background")
-        fig, ax = plt.subplots(2, 2, figsize=(9, 9), sharex=True, sharey=True)
+        fig, ax = plt.subplots(2, 2, figsize=(18, 18), sharex=True, sharey=True)
         fig.suptitle(
             "Covariance Map \nsecond moment around motor coordinates", fontsize=22
         )
         im_ratio = self.dset.covariance.shape[0] / self.dset.covariance.shape[1]
+
         for i in range(2):
             for j in range(2):
-                im = ax[i, j].imshow(self.dset.covariance[:, :, i, j], cmap="magma")
+                data = self.dset.covariance[:, :, i, j]
+
+                _data = np.where(mask, data, np.nan) if mask is not None else data
+
+                im = ax[i, j].imshow(_data, interpolation="nearest", cmap="magma")
                 fig.colorbar(im, ax=ax[i, j], fraction=0.046 * im_ratio, pad=0.04)
+
                 ax[i, j].set_title(
-                    "Covar[" + self.labels[i] + ", " + self.labels[j] + "]", fontsize=14
+                    f"Covar[{self.labels[i]}, {self.labels[j]}]", fontsize=14
                 )
                 if j == 0:
                     ax[i, j].set_ylabel(self.ylabel, fontsize=14)
                 if i == 1:
                     ax[i, j].set_xlabel(self.xlabel, fontsize=14)
+
         plt.tight_layout()
         plt.show()
 
@@ -132,24 +146,92 @@ class _Visualizer(object):
         colormap = hsv_to_rgb(hsv_key)
         return colormap
 
-    def mosaicity(self):
+    def mosaicity(self, use_motors=False, mask=None):
+        """
+        Plot the mosaicity map. This takes the motor limits or data ranges for normalization.
+        Sets the blue channel to make the mosaicity map more readable. The colormap is plotted
+        on the right based on the selected scaling method.
 
-        # Calculate Mosa Imager
+        Args:
+            use_motors (:obj:`bool`): If True, scales the mosaicity map using motor limits. If False, uses data ranges.
+            mask (:obj:`numpy array`): A 2D binary mask with the same shape as the data set. If provided, it scales the mosaicity map
+                where the mask == 1. Defaults to None.
+        """
         mean = self.dset.mean.copy()
-        ranges = np.array(
-            [
-                [mean[:, :, 0].min(), mean[:, :, 0].max()],
-                [mean[:, :, 1].min(), mean[:, :, 1].max()],
-            ]
-        )
-        ranges_magnitude = [ranges[0, 1] - ranges[0, 0], ranges[1, 1] - ranges[1, 0]]
-        chi_norm = (mean[:, :, 0] - mean[:, :, 0].min()) / ranges_magnitude[0] - 0.5
-        phi_norm = (mean[:, :, 1] - mean[:, :, 1].min()) / ranges_magnitude[1] - 0.5
-        angles, radius = self._mosa(chi_norm, phi_norm)
-        hsv_key = self._hsv_key(angles, radius)
+        if use_motors:
+            motor1_min, motor1_max = (
+                self.dset.motors[0].min(),
+                self.dset.motors[0].max(),
+            )
+            motor2_min, motor2_max = (
+                self.dset.motors[1].min(),
+                self.dset.motors[1].max(),
+            )
 
-        mosa = hsv_to_rgb(hsv_key)
-        colormap = self._hsv_colormap()
+            mean[:, :, 0] = np.clip(mean[:, :, 0], motor1_min, motor1_max)
+            mean[:, :, 1] = np.clip(mean[:, :, 1], motor2_min, motor2_max)
+
+            chi_norm = (mean[:, :, 0] - motor1_min) / (motor1_max - motor1_min)
+            phi_norm = (mean[:, :, 1] - motor2_min) / (motor2_max - motor2_min)
+
+            if mask is not None:
+                chi_norm = np.where(mask, chi_norm, np.nan)
+                phi_norm = np.where(mask, phi_norm, np.nan)
+
+            mosa = np.stack((chi_norm, phi_norm, np.ones_like(chi_norm)), axis=-1)
+            mosa[np.isnan(mosa)] = 0
+            mosa[mosa > 1] = 1
+            mosa[mosa < 0] = 0
+            mosa = hsv_to_rgb(mosa)
+            colormap = self._hsv_colormap()
+
+            alpha_channel = np.where(np.isnan(chi_norm), 0, 1)
+
+            mosa = np.dstack((mosa, alpha_channel))
+
+            chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
+            chi_labels = np.linspace(motor1_min, motor1_max, 5)
+            chi_label = [f"{chi:.3f}" for chi in chi_labels]
+
+            phiTicks = np.linspace(0, colormap.shape[0] - 1, 5)
+            phi_labels = np.linspace(motor2_min, motor2_max, 5)
+            phi_label = [f"{phi:.3f}" for phi in phi_labels]
+
+        else:
+            ranges = np.array(
+                [
+                    [mean[:, :, 0].min(), mean[:, :, 0].max()],
+                    [mean[:, :, 1].min(), mean[:, :, 1].max()],
+                ]
+            )
+            ranges_magnitude = [
+                ranges[0, 1] - ranges[0, 0],
+                ranges[1, 1] - ranges[1, 0],
+            ]
+            chi_norm = (mean[:, :, 0] - mean[:, :, 0].min()) / ranges_magnitude[0] - 0.5
+            phi_norm = (mean[:, :, 1] - mean[:, :, 1].min()) / ranges_magnitude[1] - 0.5
+            angles, radius = self._mosa(chi_norm, phi_norm)
+            hsv_key = self._hsv_key(angles, radius)
+
+            mosa = hsv_to_rgb(hsv_key)
+            colormap = self._hsv_colormap()
+
+            if mask is not None:
+                chi_norm = np.where(mask, chi_norm, np.nan)
+                phi_norm = np.where(mask, phi_norm, np.nan)
+
+            alpha_channel = np.where(np.isnan(chi_norm), 0, 1)
+            mosa = np.dstack((mosa, alpha_channel))
+
+            chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
+            chi_label = np.linspace(ranges[0, 0], ranges[0, 1], 5)
+            chi_label = np.round(chi_label, decimals=3)
+            chi_label = np.array([f"{chi:.3f}" for chi in chi_label])
+
+            phiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
+            phi_label = np.linspace(ranges[1, 0], ranges[1, 1], 5)
+            phi_label = np.round(phi_label, decimals=3)
+            phi_label = np.array([f"{phi:.3f}" for phi in phi_label])
 
         plt.style.use("dark_background")
         fig, axs = plt.subplots(
@@ -167,17 +249,9 @@ class _Visualizer(object):
         axs[1].set_xlabel(self.motor_xlabel, fontsize=14)
         axs[1].set_ylabel(self.motor_ylabel, fontsize=14)
         axs[1].set_title(r"Color Map", fontsize=14)
-        chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-        chi_label = np.linspace(ranges[0, 0], ranges[0, 1], 5)
-        chi_label = np.round(chi_label, decimals=3)
-        chi_label = np.array([f"{chi:.3f}" for chi in chi_label])
+
         axs[1].set_xticks(chiTicks)
         axs[1].set_xticklabels(chi_label)
-
-        phiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-        phi_label = np.linspace(ranges[1, 0], ranges[1, 1], 5)
-        phi_label = np.round(phi_label, decimals=3)
-        phi_label = np.array([f"{phi:.3f}" for phi in phi_label])
 
         axs[1].set_yticks(phiTicks)
         axs[1].set_yticklabels(phi_label)
@@ -216,7 +290,7 @@ class DataSet(object):
         Args:
             args, (:obj: `tuple` or other): Depending on the reader implementation this is either
                 a tuple of arguments in which case the reader is called as: self.reader(\*args, scan_id, roi)
-                or, alternatively, this is a single argument in which case the reader is called 
+                or, alternatively, this is a single argument in which case the reader is called
                 as self.reader(args, scan_id, roi) the provided reader must be compatible with one
                 of these call signatures.
             scan_id (:obj:`str`): scan id to load from, these are internal keys to diffirentiate
@@ -331,10 +405,10 @@ class DataSet(object):
             data_name (:obj:`str`): path to the data (in the h5) without the prepended scan id
             scan_ids (:obj:`str`): scan ids to load, e.g 1.1, 2.1 etc...
             threshold (:obj:`int` or :obj:`str`): background subtraction value or string 'auto' in which
-                case a default background estimation is performed and subtracted. 
+                case a default background estimation is performed and subtracted.
                 Defaults to None, in which case no background is subtracted.
-            roi (:obj:`tuple` or :obj:`int`): row_min row_max and column_min and column_max, defaults to None, 
-                in which case all data is loaded 
+            roi (:obj:`tuple` or :obj:`int`): row_min row_max and column_min and column_max, defaults to None,
+                in which case all data is loaded
             verbose (:obj:`bool`): Print loading progress or not.
 
         """

@@ -32,6 +32,7 @@ in theta, phi and chi can be retrieved as:
 import numba
 import numpy as np
 
+
 def moments(data, coordinates):
     """Compute the sample mean and covariance of a 4D or 5D DFXM data-set.
 
@@ -62,11 +63,11 @@ def moments(data, coordinates):
         mean, covariance = darling.properties.moments(data, coordinates=(phi, chi))
 
     Args:
-        data (:obj:`numpy array`):  Array of shape=(n, m, a, b) or shape=(n, m, o, a, b) where the maps over which the mean will 
+        data (:obj:`numpy array`):  Array of shape=(n, m, a, b) or shape=(n, m, o, a, b) where the maps over which the mean will
             be calculated are of shape=(n, m) or shape=(m, n, o) and the field is of shape=(a, b). Must be numpy uint16. I.e the
             detector roi is of shape=(a,b) while the scan dimensions are of shape=(n, m) such that data[:,:,i,j] is a distirbution
             for pixel i,j.
-        coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 or len==3 continaning numpy 1d arrays specifying the 
+        coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 or len==3 continaning numpy 1d arrays specifying the
             coordinates in the n and m dimensions respectively. I.e, as an example, as an example these could be the phi and chi
             angular cooridnates.
 
@@ -191,11 +192,12 @@ def covariance(data, coordinates, first_moments=None):
     points = _get_point_mesh(coordinates)
     if first_moments is None:
         first_moments = mean(data, coordinates)
-    if dim==2:
+    if dim == 2:
         _second_moments2D(data, first_moments, points, dum, res)
-    elif dim==3:
+    elif dim == 3:
         _second_moments3D(data, first_moments, points, dum, res)
     return res
+
 
 def _check_data(data, coordinates):
     assert data.dtype == np.uint16, "data must be of type uint16"
@@ -207,17 +209,19 @@ def _check_data(data, coordinates):
         ), "3D scan data array must be of shape=(a, b, n, m, o)"
     else:
         raise ValueError("Coordinate array must be 2D or 3D")
-    for i,c in enumerate(coordinates):
+    for i, c in enumerate(coordinates):
         if not isinstance(c, np.ndarray):
             raise ValueError("Coordinate array must be a numpy array")
-        assert len(c)==data.shape[2+i], "coordinate arrays do not match data shape"
+        assert len(c) == data.shape[2 + i], "coordinate arrays do not match data shape"
+
 
 def _get_point_mesh(coordinates):
     mesh = np.meshgrid(*coordinates, indexing="ij")
     points = np.zeros((len(coordinates), mesh[0].size))
     for i in range(len(coordinates)):
-        points[i,:] = mesh[i].flatten()
+        points[i, :] = mesh[i].flatten()
     return points.astype(np.float32)
+
 
 @numba.guvectorize(
     [
@@ -368,6 +372,7 @@ def _second_moments3D(data, first_moments, points, dum, res):
         m -= np.sum(m * a) / I
         cov = np.dot(m * a, m.T) / I
         res[...] = cov
+
 
 if __name__ == "__main__":
     pass
