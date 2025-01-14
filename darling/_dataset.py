@@ -134,7 +134,7 @@ class _Visualizer(object):
     def _mosa(self, ang1, ang2):
         angles = np.arctan2(-ang1, -ang2)
         anlges_normalized = self._wrap2pi(angles) / np.pi / 2
-        radius = np.sqrt(ang2**2 + ang2**2)
+        radius = np.sqrt(ang1**2 + ang2**2)
         radius_normalized = radius / radius.max()
         return anlges_normalized, radius_normalized
 
