@@ -52,7 +52,7 @@ Usecase
     mean, covariance = dset.moments()
     dset.plot.mosaicity()
 
-.. image:: ./darling/blob/main/docs/source/images/mosa.png?raw=true
+.. image:: /darling/blob/main/docs/source/images/mosa.png?raw=true
    :align: center
 
 Documentation
