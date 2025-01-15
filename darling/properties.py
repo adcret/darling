@@ -16,7 +16,7 @@ in theta, phi and chi can be retrieved as:
 
     # create a random data array
     detector_dim = (128, 128) # the number of rows and columns of the detector
-    data = np.random.rand(*detector_dim, len(phi), len(chi), len(theta))
+    data = 64000 * np.random.rand(*detector_dim, len(phi), len(chi), len(theta))
 
     data = data.astype(np.uint16) # the collected intensity data for the entire scan
 
@@ -55,7 +55,7 @@ def moments(data, coordinates):
 
         # create a random data array
         detector_dim = (128, 128)
-        data = np.random.rand(*detector_dim, len(phi), len(chi))
+        data = 64000 * np.random.rand(*detector_dim, len(phi), len(chi))
 
         data = data.astype(np.uint16)
 
@@ -102,7 +102,7 @@ def mean(data, coordinates):
 
         # create a random data array
         detector_dim = (128, 128)
-        data = np.random.rand(*detector_dim, len(theta), len(phi), len(chi))
+        data = 64000 * np.random.rand(*detector_dim, len(theta), len(phi), len(chi))
 
         data = data.astype(np.uint16)
 
@@ -163,7 +163,7 @@ def covariance(data, coordinates, first_moments=None):
 
         # create a random data array
         detector_dim = (128, 128)
-        data = np.random.rand(*detector_dim, len(phi), len(chi))
+        data = 64000 * np.random.rand(*detector_dim, len(phi), len(chi))
 
         data = data.astype(np.uint16)
 
