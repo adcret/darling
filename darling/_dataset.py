@@ -282,7 +282,7 @@ class DataSet(object):
         self.mean, self.covariance = None, None
         self.mean_3d, self.covariance_3d = None, None
 
-    def load_scan(self, args, scan_id, roi=None):
+    def load_scan(self, args, scan_id, roi=None, scan_size=None):
         """Load a scan into RM.
 
         NOTE: Input args should match the darling.reader.Reader used, however it was implemented.
@@ -298,12 +298,14 @@ class DataSet(object):
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded. The roi refers to the detector
                 dimensions.
+            scan_size (:obj:`tuple` of :obj:`int`): The size of the scan in the detector dimensions.
+             
 
         """
         if isinstance(args, tuple):
-            self.data, self.motors = self.reader(*args, scan_id, roi)
+            self.data, self.motors = self.reader(*args, scan_id, roi, scan_size)
         else:
-            self.data, self.motors = self.reader(args, scan_id, roi)
+            self.data, self.motors = self.reader(args, scan_id, roi, scan_size)
 
     def subtract(self, value):
         """Subtract a fixed integer value form the data. Protects against uint16 sign flips.

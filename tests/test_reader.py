@@ -6,6 +6,26 @@ import numpy as np
 
 import darling
 
+def create_mock_dataset_with_bad_motors():
+    """Create a mock HDF5 dataset with intentionally bad motor values."""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".h5") as tmpfile:
+        file_path = tmpfile.name
+
+    with h5py.File(file_path, "w") as h5f:
+        # Create a scan with bad motor values
+        scan_id = "1.1"
+        group = h5f.create_group(scan_id)
+
+        chi_values = np.linspace(0, 1, 100) + np.random.uniform(0, 0.0001, 100)
+        phi_values = np.linspace(0, 1, 50) + np.random.uniform(0, 0.0001, 50)
+        group.create_dataset("instrument/chi/value", data=chi_values)
+        group.create_dataset("instrument/diffrz/data", data=phi_values)
+
+        data_shape = (len(chi_values), len(phi_values), 100, 100)
+        data = np.random.randint(0, 255, size=data_shape, dtype=np.uint16)
+        group.create_dataset("instrument/pco_ff/image", data=data)
+
+    return file_path
 
 class TestMosaScan(unittest.TestCase):
     # Tests for the darling.MosaScan class.
@@ -195,6 +215,42 @@ class TestEnergyScan(unittest.TestCase):
         self.assertTrue(motors[1].dtype == np.float32)
         self.assertTrue(len(motors[0].shape) == 1)
         self.assertTrue(len(motors[1].shape) == 1)
+
+class TestWithBadMotors(unittest.TestCase):
+    def setUp(self):
+        self.mock_data_path = create_mock_dataset_with_bad_motors()
+        self.motor_names = ["instrument/chi/value", "instrument/diffrz/data"]
+        self.data_name = "instrument/pco_ff/image"
+        self.scan_size = [100, 50]
+
+    def tearDown(self):
+        # Remove the mock dataset after tests
+        os.remove(self.mock_data_path)
+
+    def test_scan_size_fallback(self):
+        reader = darling.reader.MosaScan(
+            self.mock_data_path,
+            self.motor_names,
+            motor_precision=[3, 3],
+        )
+
+        data, motors = reader(
+            data_name=self.data_name,
+            scan_id="1.1",
+            scan_size=self.scan_size,
+        )
+
+
+        self.assertEqual(len(motors[0]), self.scan_size[0])
+        self.assertEqual(len(motors[1]), self.scan_size[1])
+
+        self.assertAlmostEqual(motors[0][0], 0.0, places=3)
+        self.assertAlmostEqual(motors[0][-1], 1.0, places=3)
+        self.assertAlmostEqual(motors[1][0], 0.0, places=3)
+        self.assertAlmostEqual(motors[1][-1], 1.0, places=3)
+
+        self.assertEqual(data.shape[2], self.scan_size[0])
+        self.assertEqual(data.shape[3], self.scan_size[1])
 
 if __name__ == "__main__":
     unittest.main()

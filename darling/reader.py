@@ -175,7 +175,7 @@ class EnergyScan(Reader):
             dname = data_name
         return dname, mnames
 
-    def __call__(self, data_name, scan_id, roi=None):
+    def __call__(self, data_name, scan_id, roi=None, scan_size=None):
         """Load a scan
 
         this loads the mosa data array with shape N,N,m,n where N is the detector dimension and
@@ -187,6 +187,10 @@ class EnergyScan(Reader):
             scan_id (:obj:`str`):scan id to load from, e.g 1.1, 2.1 etc...
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded
+            scan_size (:obj:`tuple` of :obj:`int`): size of the scan in each motor dimension. This is used to,
+                adjust the motors if the precision is not enough to uniquely identify the motor settings. This is
+                a last resort and should be avoided if possible. This should be defined in the same order as the
+                motor_names. This needs to be implemented here.
 
         Returns:
             data, motors : data of shape (a,b,m,n) and motors tuple of len=m and len=n
