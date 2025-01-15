@@ -298,8 +298,8 @@ class DataSet(object):
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded. The roi refers to the detector
                 dimensions.
-            scan_size (:obj:`tuple` of :obj:`int`): The size of the scan in the detector dimensions.
-             
+            scan_size (:obj:`tuple` of :obj:`int`): The size of the scan in the motor dimensions.
+
 
         """
         if isinstance(args, tuple):
