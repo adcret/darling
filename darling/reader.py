@@ -127,11 +127,15 @@ class MosaScan(Reader):
                 )
             except ValueError as e:
                 if scan_size:
-                    print(f"Motor precision issue, trying to fixing by setting the scan size to {scan_size}")
+                    print(
+                        f"Motor precision issue, trying to fixing by setting the scan size to {scan_size}"
+                    )
                     adjusted_motors = []
                     for i, size in enumerate(scan_size):
                         adjusted_motors.append(
-                            np.linspace(motors[i][0], motors[i][-1], size, dtype=np.float32)
+                            np.linspace(
+                                motors[i][0], motors[i][-1], size, dtype=np.float32
+                            )
                         )
                     motors = adjusted_motors
 
@@ -142,7 +146,7 @@ class MosaScan(Reader):
                 else:
                     print("Motor precision issue, please provide scan size")
                     raise e
-                
+
             data = data.swapaxes(0, 2)
             data = data.swapaxes(1, -1)
 
@@ -256,6 +260,7 @@ class EnergyScan(Reader):
         assert len(chi) == data.shape[3], "Potential motor drift in chi"
 
         return data, motors
+
 
 if __name__ == "__main__":
     pass
