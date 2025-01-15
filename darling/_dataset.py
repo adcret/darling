@@ -255,7 +255,7 @@ class DataSet(object):
         self.mean, self.covariance = None, None
         self.mean_3d, self.covariance_3d = None, None
 
-    def load_scan(self, args, scan_id, roi=None):
+    def load_scan(self, args, scan_id, roi=None, scan_size=None):
         """Load a scan into RM.
 
         NOTE: Input args should match the darling.reader.Reader used, however it was implemented.
@@ -274,9 +274,9 @@ class DataSet(object):
 
         """
         if isinstance(args, tuple):
-            self.data, self.motors = self.reader(*args, scan_id, roi)
+            self.data, self.motors = self.reader(*args, scan_id, roi, scan_size)
         else:
-            self.data, self.motors = self.reader(args, scan_id, roi)
+            self.data, self.motors = self.reader(args, scan_id, roi, scan_size)
 
 
 
