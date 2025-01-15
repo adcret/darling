@@ -82,7 +82,7 @@ class MosaScan(Reader):
             self.motor_names
         ), "The motor_precision lengths need to match the motor_names length"
 
-    def __call__(self, data_name, scan_id, roi=None):
+    def __call__(self, data_name, scan_id, roi=None, scan_size=None):
         """Load a scan
 
         this loads the mosa data array with shape N,N,m,n where N is the detector dimension and
@@ -94,6 +94,10 @@ class MosaScan(Reader):
             scan_id (:obj:`str`):scan id to load from, e.g 1.1, 2.1 etc...
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded
+            scan_size (:obj:`tuple` of :obj:`int`): size of the scan in each motor dimension. This is used to,
+                adjust the motors if the precision is not enough to uniquely identify the motor settings. This is
+                a last resort and should be avoided if possible. This should be defined in the same order as the
+                motor_names.
 
         Returns:
             data, motors : data of shape (a,b,m,n) and motors tuple of len=m and len=n
@@ -103,10 +107,11 @@ class MosaScan(Reader):
 
             # Read in motors
             raw_motors = [h5f[scan_id][mn] for mn in self.motor_names]
-            motors = [
-                np.unique(np.round(m, p)).astype(np.float32)
-                for p, m in zip(self.motor_precision, raw_motors)
-            ]
+            motors = []
+            for i, m in enumerate(raw_motors):
+                unique_m = np.unique(np.round(m, self.motor_precision[i]))
+                motors.append(unique_m.astype(np.float32))
+
             voxel_distribution_shape = [len(m) for m in motors]
 
             # read in data and reshape
@@ -116,9 +121,28 @@ class MosaScan(Reader):
             else:
                 data = h5f[scan_id][data_name][:, :, :]
 
-            data = data.reshape(
-                (*voxel_distribution_shape, data.shape[-2], data.shape[-1])
-            )
+            try:
+                data = data.reshape(
+                    (*voxel_distribution_shape, data.shape[-2], data.shape[-1])
+                )
+            except ValueError as e:
+                if scan_size:
+                    print(f"Motor precision issue, trying to fixing by setting the scan size to {scan_size}")
+                    adjusted_motors = []
+                    for i, size in enumerate(scan_size):
+                        adjusted_motors.append(
+                            np.linspace(motors[i][0], motors[i][-1], size, dtype=np.float32)
+                        )
+                    motors = adjusted_motors
+
+                    voxel_distribution_shape = scan_size
+                    data = data.reshape(
+                        (*voxel_distribution_shape, data.shape[-2], data.shape[-1])
+                    )
+                else:
+                    print("Motor precision issue, please provide scan size")
+                    raise e
+                
             data = data.swapaxes(0, 2)
             data = data.swapaxes(1, -1)
 
@@ -188,9 +212,9 @@ class EnergyScan(Reader):
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded
             scan_size (:obj:`tuple` of :obj:`int`): size of the scan in each motor dimension. This is used to,
-                adjust the motors if the precision is not enough to uniquely identify the motor settings. This is
-                a last resort and should be avoided if possible. This should be defined in the same order as the
-                motor_names. This needs to be implemented here.
+                adjust the motors if the precision is not enough to identify the motor positions leading the 
+                wrong scan size. This is a last resort and should be avoided if possible. This should be defined 
+                in the same order as the motor_names. Needs to be implemented here.
 
         Returns:
             data, motors : data of shape (a,b,m,n) and motors tuple of len=m and len=n
