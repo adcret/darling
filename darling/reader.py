@@ -31,7 +31,7 @@ class Reader(object):
     def __init__(self, abs_path_to_h5_file):
         self.abs_path_to_h5_file = abs_path_to_h5_file
 
-    def __call__(self, args, scan_id, roi=None):
+    def __call__(self, args, scan_id, roi=None, scan_size=None):
         """Method to read a single 2D scan
 
         NOTE: This method is meant to be purpose implemented to fit the specific data aqusition
@@ -97,7 +97,8 @@ class MosaScan(Reader):
                 defaults to None, in which case all data is loaded
             scan_size (:obj:`tuple` of :obj:`int`): size of the scan in each motor dimension. This is used to,
                 adjust the motors if the precision is not enough to uniquely identify the motor settings. This is
-                a last resort and should be avoided if possible.
+                a last resort and should be avoided if possible. This should be defined in the same order as the
+                motor_names.
 
         Returns:
             data, motors : data of shape (a,b,m,n) and motors tuple of len=m and len=n
@@ -127,15 +128,11 @@ class MosaScan(Reader):
                 )
             except ValueError as e:
                 if scan_size:
-                    print(
-                        f"Motor precision issue, trying to fixing by setting the scan size to {scan_size}"
-                    )
+                    print(f"Motor precision issue, trying to fixing by setting the scan size to {scan_size}")
                     adjusted_motors = []
                     for i, size in enumerate(scan_size):
                         adjusted_motors.append(
-                            np.linspace(
-                                motors[i][0], motors[i][-1], size, dtype=np.float32
-                            )
+                            np.linspace(motors[i][0], motors[i][-1], size, dtype=np.float32)
                         )
                     motors = adjusted_motors
 
@@ -146,7 +143,7 @@ class MosaScan(Reader):
                 else:
                     print("Motor precision issue, please provide scan size")
                     raise e
-
+                
             data = data.swapaxes(0, 2)
             data = data.swapaxes(1, -1)
 
@@ -260,7 +257,6 @@ class EnergyScan(Reader):
         assert len(chi) == data.shape[3], "Potential motor drift in chi"
 
         return data, motors
-
 
 if __name__ == "__main__":
     pass
