@@ -127,7 +127,7 @@ class MosaScan(Reader):
                 )
             except ValueError as e:
                 if scan_size:
-                    print(f"Motor precision issue, trying to fixing by setting the scan size to {scan_size}")
+                    print(f"Motor precision issue, fixing by setting the scan size to {scan_size}")
                     adjusted_motors = []
                     for i, size in enumerate(scan_size):
                         adjusted_motors.append(
