@@ -7,7 +7,7 @@
 
     [project]
     name = "darling"
-    version = "0.0.0"
+    version = "1.0.0"
     description = "A python [D]ark field x-ray microscopy [A]nalysis &amp; [R]econstruction [L]ibrary for rapid data [IN]spection &amp; [G]raphing"
     authors = [
       { name = "{Axel Henningsson}", email = "{nilsaxelhenningsson@gmail.com}" }

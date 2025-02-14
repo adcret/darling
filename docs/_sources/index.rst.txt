@@ -16,7 +16,7 @@ properties
 DataSet
 ======================================
 
-.. autoclass:: darling.DataSet
+.. automodule:: darling._dataset
     :members:
     :show-inheritance:
 
@@ -33,6 +33,14 @@ assets
 ======================================
 
 .. automodule:: darling.assets
+    :members:
+    :show-inheritance:
+
+======================================
+metadata
+======================================
+
+.. automodule:: darling.metadata
     :members:
     :show-inheritance:
 

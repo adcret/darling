@@ -1,10 +1,8 @@
-import os
 import unittest
 
-import matplotlib.pyplot as plt
 import numpy as np
 
-from darling.assets import energy_scan, gaussian_blobs, mosaicity_scan
+import darling
 
 
 class TestAssets(unittest.TestCase):
@@ -14,42 +12,49 @@ class TestAssets(unittest.TestCase):
         self.debug = False
 
     def test_mosaicity_scan(self):
-        path, data, coordinates = mosaicity_scan()
+        path, data, coordinates = darling.assets.mosaicity_scan()
 
+        self.assertEqual(coordinates.shape[0], 2)
+        self.assertEqual(coordinates.shape[1], data.shape[2])
+        self.assertEqual(coordinates.shape[2], data.shape[3])
         self.assertTrue(isinstance(path, str))
         self.assertTrue(data.dtype == np.uint16)
         self.assertTrue(len(data.shape) == 4)
-        self.assertTrue(data.shape[2] == len(coordinates[0]))
-        self.assertTrue(data.shape[3] == len(coordinates[1]))
-        self.assertTrue(coordinates[0].dtype == np.float32)
-        self.assertTrue(coordinates[1].dtype == np.float32)
-        self.assertTrue(len(coordinates[0].shape) == 1)
-        self.assertTrue(len(coordinates[1].shape) == 1)
+        self.assertTrue(coordinates.dtype == np.float32)
+
+    def test_motor_drift(self):
+        path, data, coordinates = darling.assets.motor_drift()
+
+        self.assertEqual(coordinates.shape[0], 2)
+        self.assertEqual(coordinates.shape[1], data.shape[2])
+        self.assertEqual(coordinates.shape[2], data.shape[3])
+        self.assertTrue(isinstance(path, str))
+        self.assertTrue(data.dtype == np.uint16)
+        self.assertTrue(len(data.shape) == 4)
+        self.assertTrue(coordinates.dtype == np.float32)
 
     def test_energy_scan(self):
-        path, data, coordinates = energy_scan()
+        path, data, coordinates = darling.assets.energy_scan()
 
+        self.assertEqual(coordinates.shape[1], data.shape[2])
+        self.assertEqual(coordinates.shape[2], data.shape[3])
         self.assertTrue(isinstance(path, str))
         self.assertTrue(data.dtype == np.uint16)
         self.assertTrue(len(data.shape) == 4)
-        self.assertTrue(data.shape[2] == len(coordinates[0]))
-        self.assertTrue(data.shape[3] == len(coordinates[1]))
-        self.assertTrue(coordinates[0].dtype == np.float32)
-        self.assertTrue(coordinates[1].dtype == np.float32)
-        self.assertTrue(len(coordinates[0].shape) == 1)
-        self.assertTrue(len(coordinates[1].shape) == 1)
+        self.assertTrue(coordinates.dtype == np.float32)
 
     def test_gaussian_blobs(self):
         m = 5
         N = 19
-        data, coordinates = gaussian_blobs(N=N, m=m)
+        data, coordinates = darling.assets.gaussian_blobs(N=N, m=m)
 
         self.assertTrue(len(data.shape) == 4)
         self.assertTrue(data.shape[2] == m)
         self.assertTrue(data.shape[3] == m)
-        self.assertTrue(len(coordinates[0].shape) == 1)
-        self.assertTrue(len(coordinates[1].shape) == 1)
+        self.assertEqual(coordinates.shape[1], data.shape[2])
+        self.assertEqual(coordinates.shape[2], data.shape[3])
 
 
 if __name__ == "__main__":
+    unittest.main()
     unittest.main()

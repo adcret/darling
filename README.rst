@@ -34,34 +34,63 @@ affiliated with DTU. The core ideas of this library was originally written durin
 
 Until an associated journal publication is available, if you use this code in your research, we ask that you cite this repository.
 
-Usecase
-------------------------------------
+If you are interested in collaborating with us on DFXM data analysis, please reach out to us at: naxhe@dtu.dk
+and we can discuss the possibilities.
+
+Usecase (following the v1.0.0 release)
+------------------------------------------------
 
 .. code-block:: python
 
-    import darling
-    path_to_data, _, _ = darling.assets.mosaicity_scan()
-    reader = darling.reader.MosaScan(
-        path_to_data,
-        ["instrument/chi/value", "instrument/diffrz/data"],
-        motor_precision=[3, 3])
-    dset = darling.DataSet(reader)
-    dset.load_scan("instrument/pco_ff/image", scan_id="1.1")
-    background = dset.estimate_background()
-    dset.subtract(background)
-    mean, covariance = dset.moments()
-    dset.plot.mosaicity()
+   import darling
+   import matplotlib.pyplot as plt
+   path_to_data, _, _ = darling.assets.mosaicity_scan()
+   reader = darling.reader.MosaScan(path_to_data)
+   dset = darling.DataSet(reader)
+   dset.load_scan(scan_id="1.1")
+   background = dset.estimate_background()
+   dset.subtract(background)
+   mean, covariance = dset.moments()
+   fig, ax = dset.plot.mosaicity()
+   fig.suptitle('Mosaicity Map - a type of colorcoding of the $\chi$ - $\phi$ scan', fontsize=22, y=0.8)
+   plt.show()
 
-.. image:: https://github.com/AxelHenningsson/darling/blob/main/docs/source/images/mosa.png?raw=true
+
+.. image:: ../../docs/source/images/mosa.png
    :align: center
 
+
 Documentation
-------------------------------------
+------------------------------------------------
 Darling hosts documentation at https://axelhenningsson.github.io/darling/
 
 
+Release Notes v1.0.0
+------------------------------------------------
+Darling v1.0.0 is now available on the main branch. 
+
+This release features a simplified API for reading h5 files in which
+much of the needed information is automatically extracted.
+
+Moreover, the fundamental representation of the scan motors have been updated
+such that the darling.properties module now operates on 2D grids of coordinates
+in which the floating point values are allowed to be non-uniformly spaced.
+
+This allows for proceesing of data with motor drift, and maximises the precision
+of extracted moments.
+
+For use of the old darling v0.0.0 consider checkout from and older commit:
+
+.. code-block:: bash
+
+   git clone https://github.com/AxelHenningsson/darling.git
+   git checkout afe52
+   cd darling
+   pip install -e .
+
+
 Installation
-------------------------------------
+------------------------------------------------
 From source the key is simply to clone and pip install
 
 .. code-block:: bash

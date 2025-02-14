@@ -36,3 +36,11 @@ assets
     :members:
     :show-inheritance:
 
+======================================
+metadata
+======================================
+
+.. automodule:: darling.metadata
+    :members:
+    :show-inheritance:
+
