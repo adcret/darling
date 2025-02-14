@@ -55,10 +55,8 @@ Usecase (following the v1.0.0 release)
    fig.suptitle('Mosaicity Map - a type of colorcoding of the $\chi$ - $\phi$ scan', fontsize=22, y=0.8)
    plt.show()
 
-
-.. image:: ../../docs/source/images/mosa.png
+.. image:: https://github.com/AxelHenningsson/darling/blob/dev/docs/source/images/mosa.png?raw=true
    :align: center
-
 
 Documentation
 ------------------------------------------------
