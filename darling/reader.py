@@ -14,6 +14,7 @@ import h5py
 import hdf5plugin
 import matplotlib.pyplot as plt
 import numpy as np
+import darling
 
 
 class Reader(object):
@@ -30,14 +31,13 @@ class Reader(object):
     def __init__(self, abs_path_to_h5_file):
         self.abs_path_to_h5_file = abs_path_to_h5_file
 
-    def __call__(self, args, scan_id, roi=None):
+    def __call__(self, scan_id, roi=None):
         """Method to read a single 2D scan
 
         NOTE: This method is meant to be purpose implemented to fit the specific data aqusition
             scheme used.
 
         Args:
-            args str (:obj:`list`): list of arguments needed by the reader.
             scan_id (:obj:`str`): scan id to load from, these are internal kayes to diffirentiate
                 layers.
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
@@ -55,7 +55,7 @@ class Reader(object):
 
 
 class MosaScan(Reader):
-    """Load a 2D mosa scan. This is a id03 specific implementation matching a specific beamline mosa scan macro.
+    """Load a 2D mosa scan. This is a id03 specific implementation matphing a specific beamline mosa scan macro.
 
     NOTE: This reader was specifically written for data collection at id03. For general purpose reading of data you
     must implement your own reader class. The exact reding of data is strongly dependent on data aqusition scheme and
@@ -63,26 +63,17 @@ class MosaScan(Reader):
 
     Args:
         abs_path_to_h5_file str (:obj:`str`): absolute path to the h5 file with the diffraction images.
-        motor_names data (:obj:`list` of :obj:`str`): h5 paths to the data [chi, phi, strain] these need to be ordered
-            to match the scan sequence.
-        motor_precision data (:obj:`list` of :obj:`int`): number of trusted deciamls in each motor dimension. (matching motor_names)
     """
 
     def __init__(
         self,
         abs_path_to_h5_file,
-        motor_names,
-        motor_precision,
     ):
         self.abs_path_to_h5_file = abs_path_to_h5_file
-        self.motor_names = motor_names
-        self.motor_precision = motor_precision
+        self.config = darling.metadata.ID03(abs_path_to_h5_file)
+        self.scan_params = None
 
-        assert len(self.motor_precision) == len(
-            self.motor_names
-        ), "The motor_precision lengths need to match the motor_names length"
-
-    def __call__(self, data_name, scan_id, roi=None):
+    def __call__(self, scan_id, roi=None):
         """Load a scan
 
         this loads the mosa data array with shape N,N,m,n where N is the detector dimension and
@@ -90,34 +81,37 @@ class MosaScan(Reader):
         your own reader.
 
         Args:
-            data_name (:obj:`str`): path to the data wihtout the prepended scan id
             scan_id (:obj:`str`):scan id to load from, e.g 1.1, 2.1 etc...
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded
 
         Returns:
-            data, motors : data of shape (a,b,m,n) and motors tuple of len=m and len=n
+            data, motors : data of shape=(a,b,m,n) and the
+                motor arrays as 2d meshgrids, shape=(k,m,n)
+                where k is the number of motors used in the
+                scan (typically 1,2 or 3).
 
         """
-        with h5py.File(self.abs_path_to_h5_file, "r") as h5f:
 
-            # Read in motors
-            raw_motors = [h5f[scan_id][mn] for mn in self.motor_names]
+        self.scan_params = self.config(scan_id)
+
+        with h5py.File(self.abs_path_to_h5_file, "r") as h5f:
+            # Read in motrs
             motors = [
-                np.unique(np.round(m, p)).astype(np.float32)
-                for p, m in zip(self.motor_precision, raw_motors)
+                h5f[scan_id][mn][...].reshape(*self.scan_params["scan_shape"])
+                for mn in self.scan_params["motor_names"]
             ]
-            voxel_distribution_shape = [len(m) for m in motors]
+            motors = np.array(motors).astype(np.float32)
 
             # read in data and reshape
             if roi:
                 r1, r2, c1, c2 = roi
-                data = h5f[scan_id][data_name][:, r1:r2, c1:c2]
+                data = h5f[scan_id][self.scan_params["data_name"]][:, r1:r2, c1:c2]
             else:
-                data = h5f[scan_id][data_name][:, :, :]
+                data = h5f[scan_id][self.scan_params["data_name"]][:, :, :]
 
             data = data.reshape(
-                (*voxel_distribution_shape, data.shape[-2], data.shape[-1])
+                (*self.scan_params["scan_shape"], data.shape[-2], data.shape[-1])
             )
             data = data.swapaxes(0, 2)
             data = data.swapaxes(1, -1)
@@ -126,7 +120,7 @@ class MosaScan(Reader):
 
 
 class EnergyScan(Reader):
-    """Load a 2D energy scan. This is a id03 specific implementation matching a specific beamline energy scan macro.
+    """Load a 2D energy scan. This is a id03 specific implementation matphing a specific beamline energy scan macro.
 
     NOTE: This reader was specifically written for data collection at id03. For general purpose reading of data you
     must implement your own reader class. The exact reding of data is strongly dependent on data aqusition scheme and
@@ -137,53 +131,25 @@ class EnergyScan(Reader):
         abs_path_to_h5_file str (:obj:`str`): absolute path to one of the h5 file with the diffraction images. FOr an energy
             scan there is one file per layer in z. This may be any one of these paths. Provided the file name ends with
             layer_0.h5 the file path will be rebuilt upon read call.
-        motor_names data (:obj:`list` of :obj:`str`): h5 paths to the data these need to be ordered exactly as [energy, chi]
-            In an energy scan the h5 grouping is in energy and only the subsequent motor srquence need to be provided. I.e
-            for instance 'instrument/chi/value' could be the path to the chi motor.
-        motor_precision data (:obj:`list` of :obj:`int`): number of trusted deciamls in each motor dimension. (matching motor_names)
     """
 
-    def __init__(
-        self,
-        abs_path_to_h5_file,
-        motor_names,
-        motor_precision,
-    ):
+    def __init__(self, abs_path_to_h5_file):
         self.abs_path_to_h5_file = abs_path_to_h5_file
-        self.motor_names = motor_names
-        self.motor_precision = motor_precision
-
-        assert len(self.motor_precision) == len(
-            self.motor_names
-        ), "The motor_precision lengths need to match the motor_names length"
+        self.config = darling.metadata.ID03(abs_path_to_h5_file)
+        self.scan_params = None
 
     def _get_layer_path(self, scan_id):
         layer_number = str(int(scan_id[0]) - 1)
         layer_tag = r"layer_" + layer_number + ".h5"
         return re.sub(r"layer_\d+\.h5", layer_tag, self.abs_path_to_h5_file)
 
-    def _pad_h5_paths(self, data_name, motor_names):
-        mnames = []
-        for name in motor_names:
-            if not name.startswith("/"):
-                mnames.append("/" + name)
-            else:
-                mnames.append(name)
-        if not name.startswith("/"):
-            dname = "/" + data_name
-        else:
-            dname = data_name
-        return dname, mnames
-
-    def __call__(self, data_name, scan_id, roi=None):
+    def __call__(self, scan_id, roi=None):
         """Load a scan
 
         this loads the mosa data array with shape N,N,m,n where N is the detector dimension and
         m,n are the motor dimensions as ordered in the self.motor_names.
 
         Args:
-            data_name (:obj:`str`): path to the data wihtout the prepended energy id. i,e
-                'instrument/pco_ff/data' or the like.
             scan_id (:obj:`str`):scan id to load from, e.g 1.1, 2.1 etc...
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded
@@ -193,43 +159,47 @@ class EnergyScan(Reader):
 
         """
         abs_path_to_h5_file = self._get_layer_path(scan_id)
-        dname, mnames = self._pad_h5_paths(data_name, self.motor_names)
 
         with h5py.File(abs_path_to_h5_file, "r") as h5f:
             key0 = list(h5f.keys())[0]
+            self.config.abs_path_to_h5_file = abs_path_to_h5_file
+            self.scan_params = self.config(key0)
 
-            chi = h5f[key0 + mnames[1]][:].astype(np.float32)
-
-            _, det_rows, det_cols = h5f[key0 + dname].shape
+            _, det_rows, det_cols = h5f[key0][self.scan_params["data_name"]].shape
             n_energy = len(h5f.keys())
-            n_chis = len(chi)
+            n_phis = self.scan_params["scan_shape"][0]
 
             if roi is None:
-                data = np.zeros((det_rows, det_cols, n_energy, n_chis), dtype=np.uint16)
+                data = np.zeros((det_rows, det_cols, n_phis, n_energy), dtype=np.uint16)
             else:
                 r1, r2, c1, c2 = roi
-                data = np.zeros((r2 - r1, c2 - c1, n_energy, n_chis), dtype=np.uint16)
+                data = np.zeros((r2 - r1, c2 - c1, n_phis, n_energy), dtype=np.uint16)
 
-            energy = np.zeros((n_energy,), dtype=np.float32)
+            energy = np.zeros((n_phis, n_energy))
+            phi = np.zeros((n_phis, n_energy))
 
-            all_chis = []
+            ccmth_motor = self.config.motor_map["ccmth"]
+            phi_motor = self.scan_params["motor_names"][0]
+
+            # second motor is assumed to be integrated in 1 step
+            if self.scan_params["scan_shape"][1] != 1:
+                raise NotImplementedError(
+                    "The scan apears to be 3D with 2 angular motors + energy"
+                )
 
             for i, key in enumerate(h5f.keys()):  # iterates over energies.
-                chi_stack = h5f[key + dname][:, :, :]
-                chi_stack = np.swapaxes(chi_stack, 0, 1)
-                chi_stack = np.swapaxes(chi_stack, 1, 2)
+                phi_stack = h5f[key][self.scan_params["data_name"]][:, :, :]
+                phi_stack = np.swapaxes(phi_stack, 0, 1)
+                phi_stack = np.swapaxes(phi_stack, 1, 2)
                 if roi is None:
-                    data[:, :, i, :] = chi_stack
+                    data[:, :, :, i] = phi_stack
                 else:
-                    data[:, :, i, :] = chi_stack[r1:r2, c1:c2, :]
-                energy[i] = h5f[key + mnames[0]][()]
-                all_chis.extend(list(h5f[key + mnames[1]][:]))
+                    data[:, :, :, i] = phi_stack[r1:r2, c1:c2, :]
 
-        chi = np.unique(np.round(all_chis, self.motor_precision[0])).astype(np.float32)
-        energy = np.round(energy, self.motor_precision[0]).astype(np.float32)
-        motors = [energy, chi]
+                energy[:, i] = h5f[key][ccmth_motor][()]
+                phi[:, i] = h5f[key][phi_motor][:]
 
-        assert len(chi) == data.shape[3], "Potential motor drift in chi"
+        motors = np.array([phi, energy]).astype(np.float32)
 
         return data, motors
 

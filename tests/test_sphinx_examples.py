@@ -5,36 +5,41 @@ as a strings.
 
 We then write example code to a temp file module and import to check for any obvious errors.
 """
+
 import os
 import re
-import tempfile
 import unittest
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 
 class TestSphinxExamples(unittest.TestCase):
-
     def setUp(self):
         self.debug = False
 
     def test_sphinx_examples(self):
-        """execute strings of python code and check for obvious errors.
-        """
-        _root_path = os.path.abspath(os.path.join(os.path.abspath(__file__), "..", ".."))
+        """execute strings of python code and check for obvious errors."""
+        _root_path = os.path.abspath(
+            os.path.join(os.path.abspath(__file__), "..", "..")
+        )
         directory_path = os.path.join(_root_path, "darling")
         python_files, code_snippets = self.extract_sphinx_code(directory_path)
         # simply write examples to tmp file and import.
         tmp_file = os.path.abspath(
             os.path.join(os.path.abspath(__file__), "..", "..", "tests", "tmp.py")
         )
-        for pyfile,snippet in zip(python_files, code_snippets):
+        for pyfile, snippet in zip(python_files, code_snippets):
+            if self.debug is False:
+                snippet = snippet.replace("plt.show()", "# plt.show()")
 
             try:
                 exec(snippet)
             except:
-                errmsg = "Sphinx docs example in "+pyfile+" failed to execute: \n>>\n" + snippet + '>>'
+                errmsg = (
+                    "Sphinx docs example in "
+                    + pyfile
+                    + " failed to execute: \n>>\n"
+                    + snippet
+                    + ">>"
+                )
                 raise ValueError(errmsg)
 
     def extract_sphinx_code(self, directory):
@@ -70,7 +75,7 @@ class TestSphinxExamples(unittest.TestCase):
                         for docstring in sphinx_docstring_pattern.findall(content):
                             reading = False
                             doc_lines = docstring.split("\n")
-                            for i,line in enumerate(doc_lines):
+                            for i, line in enumerate(doc_lines):
                                 # extract example code
                                 if ".. code-block:: python" in line:
                                     reading = True
@@ -78,16 +83,25 @@ class TestSphinxExamples(unittest.TestCase):
                                     func_comment = line.startswith("    ")
                                 elif reading:
                                     if func_comment:
-                                        if line.startswith("        ") and "Args:" not in line:
+                                        if (
+                                            line.startswith("        ")
+                                            and "Args:" not in line
+                                        ):
                                             example += line[8:] + "\n"
-                                        elif bool(re.match(r"^ {4}\S", line)) or i==len(doc_lines)-1:
+                                        elif (
+                                            bool(re.match(r"^ {4}\S", line))
+                                            or i == len(doc_lines) - 1
+                                        ):
                                             reading = False
                                             code_snippets.append(example)
                                             python_files.append(file)
                                     else:
                                         if line.startswith("    "):
                                             example += line[4:] + "\n"
-                                        elif bool(re.match(r"^ {0}\S", line)) or i==len(doc_lines)-1:
+                                        elif (
+                                            bool(re.match(r"^ {0}\S", line))
+                                            or i == len(doc_lines) - 1
+                                        ):
                                             reading = False
                                             code_snippets.append(example)
                                             python_files.append(file)

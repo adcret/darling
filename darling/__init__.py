@@ -1,2 +1,2 @@
+from . import _color, assets, metadata, properties, reader
 from ._dataset import DataSet
-from . import properties, assets, reader

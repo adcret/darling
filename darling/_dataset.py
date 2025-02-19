@@ -1,58 +1,42 @@
 import time
 
-import h5py
-import hdf5plugin
 import matplotlib.pyplot as plt
 import meshio
 import numpy as np
 import scipy.ndimage
-from matplotlib.colors import hsv_to_rgb
 
 import darling
 
 
 class _Visualizer(object):
-
     # TODO: some of this should probably be in the properties module...
 
     def __init__(self, dset_reference):
         self.dset = dset_reference
-        self.labels = self.dset.reader.motor_names[:]
-        for i, label in enumerate(self.labels):
-            if "chi" in self.labels[i]:
-                self.labels[i] = r"$\chi$"
-            if "phi" in self.labels[i]:
-                self.labels[i] = r"$\phi$"
-            if "ccmth" in self.labels[i]:
-                self.labels[i] = r"ccmth"
-            if "strain" in self.labels[i]:
-                self.labels[i] = r"$\varepsilon$"
-            if "energy" in self.labels[i]:
-                self.labels[i] = r"energy"
-            if "diffrz" in self.labels[i]:
-                self.labels[i] = r"diffrz"
-            if "diffry" in self.labels[i]:
-                self.labels[i] = r"diffry"
-        self.motor_xlabel = self.labels[0]
-        self.motor_ylabel = self.labels[1]
-
         self.xlabel = "Detector row index"
         self.ylabel = "Detector column index"
 
     def mean(self):
         plt.style.use("dark_background")
         fig, ax = plt.subplots(1, 2, figsize=(9, 6), sharex=True, sharey=True)
-        fig.suptitle("Mean Map \nfirst moment around motor coordinates", fontsize=22)
+        fig.suptitle(
+            "Mean Map \nfirst moment around motor coordinates",
+            fontsize=22,
+        )
+
         im_ratio = self.dset.mean.shape[0] / self.dset.mean.shape[1]
         for i in range(2):
             im = ax[i].imshow(self.dset.mean[:, :, i], cmap="jet")
             fig.colorbar(im, ax=ax[i], fraction=0.046 * im_ratio, pad=0.04)
-            ax[i].set_title("Mean in motor " + self.labels[i], fontsize=14)
+            ax[i].set_title(
+                "Mean in motor " + self.dset.reader.scan_params["motor_names"][i],
+                fontsize=14,
+            )
             ax[i].set_xlabel(self.xlabel, fontsize=14)
             if i == 0:
                 ax[i].set_ylabel(self.ylabel, fontsize=14)
         plt.tight_layout()
-        plt.show()
+        return fig, ax
 
     def covariance(self, mask=None):
         """
@@ -65,7 +49,8 @@ class _Visualizer(object):
         plt.style.use("dark_background")
         fig, ax = plt.subplots(2, 2, figsize=(18, 18), sharex=True, sharey=True)
         fig.suptitle(
-            "Covariance Map \nsecond moment around motor coordinates", fontsize=22
+            "Covariance Map \nsecond moment around motor coordinates",
+            fontsize=22,
         )
         im_ratio = self.dset.covariance.shape[0] / self.dset.covariance.shape[1]
 
@@ -79,7 +64,8 @@ class _Visualizer(object):
                 fig.colorbar(im, ax=ax[i, j], fraction=0.046 * im_ratio, pad=0.04)
 
                 ax[i, j].set_title(
-                    f"Covar[{self.labels[i]}, {self.labels[j]}]", fontsize=14
+                    f"Covar[{self.dset.reader.scan_params['motor_names'][i]}, {self.dset.reader.scan_params['motor_names'][j]}]",
+                    fontsize=8,
                 )
                 if j == 0:
                     ax[i, j].set_ylabel(self.ylabel, fontsize=14)
@@ -87,7 +73,36 @@ class _Visualizer(object):
                     ax[i, j].set_xlabel(self.xlabel, fontsize=14)
 
         plt.tight_layout()
-        plt.show()
+        return fig, ax
+
+    def kam(self):
+        plt.style.use("dark_background")
+        fig, ax = plt.subplots(1, 1, figsize=(9, 9), sharex=True, sharey=True)
+        fig.suptitle(
+            "(Projected) KAM Map \nlocal variation in orientation",
+            fontsize=22,
+        )
+        if self.dset.kam is None:
+            _ = self.dset.kernel_average_misorientation()
+        kam = np.full_like(self.dset.kam, fill_value=np.nan)
+        a, b = self.dset.kam_kernel_size
+        kam[
+            (a // 2) : -(a // 2),
+            (b // 2) : -(b // 2),
+        ] = self.dset.kam[
+            (a // 2) : -(a // 2),
+            (b // 2) : -(b // 2),
+        ]
+        im_ratio = kam.shape[0] / kam.shape[1]
+        im = ax.imshow(
+            kam,
+            cmap="jet",
+        )
+        fig.colorbar(im, ax=ax, fraction=0.046 * im_ratio, pad=0.04)
+        ax.set_xlabel(self.xlabel, fontsize=14)
+        ax.set_ylabel(self.ylabel, fontsize=14)
+        plt.tight_layout()
+        return fig, ax
 
     def misorientation(self):
         plt.style.use("dark_background")
@@ -103,50 +118,12 @@ class _Visualizer(object):
         im_ratio = misori.shape[0] / misori.shape[1]
         im = ax.imshow(misori, cmap="viridis")
         fig.colorbar(im, ax=ax, fraction=0.046 * im_ratio, pad=0.04)
-        ax.set_title("Misorientation", fontsize=14)
         ax.set_xlabel(self.xlabel, fontsize=14)
         ax.set_ylabel(self.ylabel, fontsize=14)
         plt.tight_layout()
-        plt.show()
+        return fig, ax
 
-    def _wrap2pi(self, x):
-        """
-        Python implementation of Matlab method `wrapTo2pi`.
-        Wraps angles in x, in radians, to the interval [0, 2*pi] such that 0 maps
-        to 0 and 2*pi maps to 2*pi. In general, positive multiples of 2*pi map to
-        2*pi and negative multiples of 2*pi map to 0.
-        """
-        xwrap = np.remainder(x - np.pi, 2 * np.pi)
-        mask = np.abs(xwrap) > np.pi
-        xwrap[mask] -= 2 * np.pi * np.sign(xwrap[mask])
-        return xwrap + np.pi
-
-    def _hsv_key(self, angles, radius):
-        return np.stack(
-            (
-                angles,  # HUE (the actual color)
-                radius,  # SATURATION (how saturated the color is)
-                np.ones(angles.shape),  # VALUE. (white to black)
-            ),
-            axis=2,
-        )
-
-    def _mosa(self, ang1, ang2):
-        angles = np.arctan2(-ang1, -ang2)
-        anlges_normalized = self._wrap2pi(angles) / np.pi / 2
-        radius = np.sqrt(ang1**2 + ang2**2)
-        radius_normalized = radius / radius.max()
-        return anlges_normalized, radius_normalized
-
-    def _hsv_colormap(self):
-        ang_grid = np.linspace(-1, 1, 400)
-        ang1, ang2 = np.meshgrid(ang_grid, ang_grid)
-        angles, radius = self._mosa(ang1, ang2)
-        hsv_key = self._hsv_key(angles, radius)
-        colormap = hsv_to_rgb(hsv_key)
-        return colormap
-
-    def mosaicity(self, use_motors=False, mask=None):
+    def mosaicity(self, norm="dynamic"):
         """
         Plot the mosaicity map. This takes the motor limits or data ranges for normalization.
         Sets the blue channel to make the mosaicity map more readable. The colormap is plotted
@@ -157,107 +134,33 @@ class _Visualizer(object):
             mask (:obj:`numpy array`): A 2D binary mask with the same shape as the data set. If provided, it scales the mosaicity map
                 where the mask == 1. Defaults to None.
         """
-        mean = self.dset.mean.copy()
-        if use_motors:
-            motor1_min, motor1_max = (
-                self.dset.motors[0].min(),
-                self.dset.motors[0].max(),
-            )
-            motor2_min, motor2_max = (
-                self.dset.motors[1].min(),
-                self.dset.motors[1].max(),
-            )
-
-            mean[:, :, 0] = np.clip(mean[:, :, 0], motor1_min, motor1_max)
-            mean[:, :, 1] = np.clip(mean[:, :, 1], motor2_min, motor2_max)
-
-            chi_norm = (mean[:, :, 0] - motor1_min) / (motor1_max - motor1_min)
-            phi_norm = (mean[:, :, 1] - motor2_min) / (motor2_max - motor2_min)
-
-            if mask is not None:
-                chi_norm = np.where(mask, chi_norm, np.nan)
-                phi_norm = np.where(mask, phi_norm, np.nan)
-
-            mosa = np.stack((chi_norm, phi_norm, np.ones_like(chi_norm)), axis=-1)
-            mosa[np.isnan(mosa)] = 0
-            mosa[mosa > 1] = 1
-            mosa[mosa < 0] = 0
-            mosa = hsv_to_rgb(mosa)
-            colormap = self._hsv_colormap()
-
-            alpha_channel = np.where(np.isnan(chi_norm), 0, 1)
-
-            mosa = np.dstack((mosa, alpha_channel))
-
-            chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-            chi_labels = np.linspace(motor1_min, motor1_max, 5)
-            chi_label = [f"{chi:.3f}" for chi in chi_labels]
-
-            phiTicks = np.linspace(0, colormap.shape[0] - 1, 5)
-            phi_labels = np.linspace(motor2_min, motor2_max, 5)
-            phi_label = [f"{phi:.3f}" for phi in phi_labels]
-
-        else:
-            ranges = np.array(
-                [
-                    [mean[:, :, 0].min(), mean[:, :, 0].max()],
-                    [mean[:, :, 1].min(), mean[:, :, 1].max()],
-                ]
-            )
-            ranges_magnitude = [
-                ranges[0, 1] - ranges[0, 0],
-                ranges[1, 1] - ranges[1, 0],
-            ]
-            chi_norm = (mean[:, :, 0] - mean[:, :, 0].min()) / ranges_magnitude[0] - 0.5
-            phi_norm = (mean[:, :, 1] - mean[:, :, 1].min()) / ranges_magnitude[1] - 0.5
-            angles, radius = self._mosa(chi_norm, phi_norm)
-            hsv_key = self._hsv_key(angles, radius)
-
-            mosa = hsv_to_rgb(hsv_key)
-            colormap = self._hsv_colormap()
-
-            if mask is not None:
-                chi_norm = np.where(mask, chi_norm, np.nan)
-                phi_norm = np.where(mask, phi_norm, np.nan)
-
-            alpha_channel = np.where(np.isnan(chi_norm), 0, 1)
-            mosa = np.dstack((mosa, alpha_channel))
-
-            chiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-            chi_label = np.linspace(ranges[0, 0], ranges[0, 1], 5)
-            chi_label = np.round(chi_label, decimals=3)
-            chi_label = np.array([f"{chi:.3f}" for chi in chi_label])
-
-            phiTicks = np.linspace(0, colormap.shape[1] - 1, 5)
-            phi_label = np.linspace(ranges[1, 0], ranges[1, 1], 5)
-            phi_label = np.round(phi_label, decimals=3)
-            phi_label = np.array([f"{phi:.3f}" for phi in phi_label])
+        rgbmap, colorkey, colorgrid = darling.properties.rgb(
+            self.dset.mean, norm=norm, coordinates=self.dset.motors
+        )
 
         plt.style.use("dark_background")
-        fig, axs = plt.subplots(
+        fig, ax = plt.subplots(
             1, 2, figsize=(12, 9), gridspec_kw={"width_ratios": [3, 1]}
         )
         fig.suptitle(
             "Mosaicity Map \n maps motors to a cylindrical HSV colorspace",
             fontsize=22,
         )
-        axs[0].imshow(mosa)
-        axs[0].set_title(r"Mosaicity Map", fontsize=14)
-        axs[0].set_xlabel(self.xlabel, fontsize=14)
-        axs[0].set_ylabel(self.ylabel, fontsize=14)
-        axs[1].imshow(colormap)
-        axs[1].set_xlabel(self.motor_xlabel, fontsize=14)
-        axs[1].set_ylabel(self.motor_ylabel, fontsize=14)
-        axs[1].set_title(r"Color Map", fontsize=14)
 
-        axs[1].set_xticks(chiTicks)
-        axs[1].set_xticklabels(chi_label)
+        ax[0].imshow(rgbmap)
+        ax[0].set_xlabel(self.xlabel, fontsize=14)
+        ax[0].set_ylabel(self.ylabel, fontsize=14)
 
-        axs[1].set_yticks(phiTicks)
-        axs[1].set_yticklabels(phi_label)
+        ax[1].pcolormesh(*colorgrid, colorkey, shading="auto")
+        a = np.max(colorgrid[0]) - np.min(colorgrid[0])
+        b = np.max(colorgrid[1]) - np.min(colorgrid[1])
+        ax[1].set_aspect(a / b)
 
+        ax[1].set_xlabel(self.dset.reader.scan_params["motor_names"][0], fontsize=14)
+        ax[1].set_ylabel(self.dset.reader.scan_params["motor_names"][1], fontsize=14)
+        ax[1].set_title(r"Color Map", fontsize=14)
         plt.tight_layout()
-        plt.show()
+        return fig, ax
 
 
 class DataSet(object):
@@ -281,18 +184,15 @@ class DataSet(object):
         self.plot = _Visualizer(self)
         self.mean, self.covariance = None, None
         self.mean_3d, self.covariance_3d = None, None
+        self.kam = None
+        self.kam_kernel_size = None
 
-    def load_scan(self, args, scan_id, roi=None):
+    def load_scan(self, scan_id, roi=None):
         """Load a scan into RM.
 
         NOTE: Input args should match the darling.reader.Reader used, however it was implemented.
 
         Args:
-            args, (:obj: `tuple` or other): Depending on the reader implementation this is either
-                a tuple of arguments in which case the reader is called as: self.reader(\*args, scan_id, roi)
-                or, alternatively, this is a single argument in which case the reader is called
-                as self.reader(args, scan_id, roi) the provided reader must be compatible with one
-                of these call signatures.
             scan_id (:obj:`str`): scan id to load from, these are internal keys to diffirentiate
                 layers.
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
@@ -300,10 +200,7 @@ class DataSet(object):
                 dimensions.
 
         """
-        if isinstance(args, tuple):
-            self.data, self.motors = self.reader(*args, scan_id, roi)
-        else:
-            self.data, self.motors = self.reader(args, scan_id, roi)
+        self.data, self.motors = self.reader(scan_id, roi)
 
     def subtract(self, value):
         """Subtract a fixed integer value form the data. Protects against uint16 sign flips.
@@ -347,6 +244,27 @@ class DataSet(object):
         self.mean, self.covariance = darling.properties.moments(self.data, self.motors)
         return self.mean, self.covariance
 
+    def kernel_average_misorientation(self, size=(5, 5)):
+        """Compute the KAM (Kernel Average Misorientation) map.
+
+        KAM is compute by sliding a kernel across the image and for each voxel computing
+        the average misorientation between the central voxel and the surrounding voxels.
+
+        NOTE: This is a projected KAM in the sense that the rotation the full rotation
+        matrix of the voxels are unknown. I.e this is a computation of the misorientation
+        between diffraction vectors Q and not orientation elements of SO(3).
+
+        Args:
+            size (:obj:`tuple`): The size of the kernel to use for the KAM computation.
+                Defaults to (3, 3).
+
+        Returns:
+            :obj:`numpy array` : The KAM map of shape=(a, b). (same units as input.)
+        """
+        self.kam = darling.properties.kam(self.mean, size)
+        self.kam_kernel_size = size
+        return self.kam
+
     def integrate(self):
         """Return the summed data stack along the motor dimensions avoiding data stack copying.
 
@@ -389,9 +307,7 @@ class DataSet(object):
             mask = scipy.ndimage.binary_fill_holes(mask)
         return mask
 
-    def compile_layers(
-        self, reader_args, scan_ids, threshold=None, roi=None, verbose=False
-    ):
+    def compile_layers(self, scan_ids, threshold=None, roi=None, verbose=False):
         """Sequentially load a series of scans and assemble the 3D moment maps.
 
         this loads the mosa data array with shape a,b,m,n,(o) where a,b are the detector dimension and
@@ -402,7 +318,6 @@ class DataSet(object):
         memory at a time to enhance RAM performance.
 
         Args:
-            data_name (:obj:`str`): path to the data (in the h5) without the prepended scan id
             scan_ids (:obj:`str`): scan ids to load, e.g 1.1, 2.1 etc...
             threshold (:obj:`int` or :obj:`str`): background subtraction value or string 'auto' in which
                 case a default background estimation is performed and subtracted.
@@ -416,7 +331,6 @@ class DataSet(object):
         covariance_3d = []
         tot_time = 0
         for i, scan_id in enumerate(scan_ids):
-
             t1 = time.perf_counter()
 
             if verbose:
@@ -427,7 +341,7 @@ class DataSet(object):
                     + str(len(scan_ids))
                     + " scans"
                 )
-            self.load_scan(reader_args, scan_id, roi)
+            self.load_scan(scan_id, roi)
 
             if threshold is not None:
                 if threshold == "auto":
