@@ -34,6 +34,7 @@ import numba
 import numpy as np
 
 import darling._color as color
+import darling._peaksearcher as _peaksearcher
 
 
 def rgb(property_2d, norm="dynamic", coordinates=None):
@@ -160,7 +161,6 @@ def kam(property_2d, size=(3, 3)):
         fig, ax = plt.subplots(1, 1, figsize=(7, 7))
         im = ax.imshow(kam, cmap="plasma")
         plt.tight_layout()
-        plt.show()
         plt.show()
 
     .. image:: ../../docs/source/images/kam.png
@@ -542,6 +542,116 @@ def _kam(property_2d, km, kn, kam_map, counts_map):
                             if ~np.isnan(n[0]):
                                 kam_map[i, j, counts_map[i, j]] = np.linalg.norm(n - c)
                                 counts_map[i, j] += 1
+
+
+def gaussian_mixture(data, k=8, coordinates=None):
+    """Model a 2D grid of 2D images with a 2D grid of gaussian mixtures.
+
+    For a shape=(m,n,a,b) data array, for each primary pixel i,j, the a,b data array is
+    treated as a 2D image and the local maxima are located. Regions are segmented around
+    these local maximas such that each secondary pixel in the shape=(a,b) array is
+    assigned a label. The segmented regions are then treated as gaussians with mean
+    and covariance extracted per label. Additionally, a sereis of features are
+    extracted for each label.
+
+    Specifically, for each located peak, the following features are extracted:
+        - sum_intensity: the sum of the intensity values in the segmented domain
+        - number_of_pixels: the number of pixels in the segmented domain
+        - mean_row: the mean row position in the segmented domain
+        - mean_col: the mean column position in the segmented domain
+        - var_row: the variance of the row positions in the segmented domain
+        - var_col: the variance of the column positions in the segmented domain
+        - var_row_col: the covariance of the row and column positions in the segmented
+            domain
+        - max_pix_row: the row position of the pixel with the highest intensity in
+            the segmented domain
+        - max_pix_col: the column position of the pixel with the highest intensity
+            in the segmented domain
+        - max_pix_intensity: the intensity of the pixel with the highest intensity
+            in the segmented domain
+
+    Additionally, when motor coordinate arrays are provided we have the following features:
+        - mean_motor1: the mean motor position for the first motor in the
+            segmented domain
+        - mean_motor2: the mean motor position for the second motor in the
+            segmented domain
+        - var_motor1: the variance of the motor positions for the first motor
+            in the segmented domain
+        - var_motor2: the variance of the motor positions for the second motor
+            in the segmented domain
+        - var_motor1_motor2: the covariance of the motor positions for the first
+            and second motor in the segmented domain
+        - max_pix_motor1: the motor position for the first motor of the pixel with
+            the highest intensity in the segmented domain
+        - max_pix_motor2: the motor position for the second motor of the pixel with
+            the highest intensity in the segmented domain
+
+    Example:
+
+    .. code-block:: python
+
+        import darling
+        import matplotlib.pyplot as plt
+
+        # import a small data set from assets known to
+        # comprise crystalline domains
+        _, data, coordinates = darling.assets.domains()
+
+        # compute all the gaussian mixture model features
+        features = darling.properties.gaussian_mixture(data, k=3, coordinates=coordinates)
+
+        # this is a dict like structure that can be accessed like this:
+        sum_intensity_second_strongest_peak = features["sum_intensity"][..., 1]
+
+        # plot the mean in the first motor direction for the strongest peak
+        plt.style.use("dark_background")
+        fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+        im = ax.imshow(features["mean_motor1"][..., 0], cmap="plasma")
+        plt.tight_layout()
+        plt.show()
+
+    .. image:: ../../docs/source/images/domains.png
+
+    Args:
+        data (:obj:`numpy array`):  Array of shape=(m, n, a, b) where the maps over
+            which the mean will be calculated are of shape=(m, n) and the field is
+            of shape=(a, b) such that data[:,:,i,j] is an intensity distribution for
+            pixel i,j.
+        k (:obj:`int`): The number of gaussians to fit to the data. Defaults to 8.
+            this means that the k strongest peaks, with respect to intensity, will be
+            fitted with gaussians. The remaining peaks will be ignored.
+        coordinates (:obj:`tuple` of :obj:`numpy array`): Tuple of len=2 containing
+            numpy 2d arrays specifying the coordinates of shape=(m,n) respectively.
+            I.e, as an example, these could be the phi and chi angular cooridnates.
+
+    Returns:
+        :obj:`dict` : features as a dictionary containing the extracted features for
+            each peak with keys as specified above. i.e features["sum_intensity"][..., i]
+            is a 2D image where each pixel holds the summed intensity of the i-th
+            strongest peak. Likewise features["mean_row"][..., i] is the mean row
+            position of the i-th strongest peak etc.
+
+    """
+    assert k > 0, "k must be larger than 0"
+    assert data.dtype == np.uint16, "data must be of type uint16"
+    assert len(data.shape) == 4, "data must be 4D"
+    if coordinates is not None:
+        assert len(coordinates) == 2, "coordinates must be a tuple of length 2"
+        assert len(coordinates[0].shape) == 2, "coordinates must be 2D"
+        assert len(coordinates[1].shape) == 2, "coordinates must be 2D"
+        assert coordinates[0].shape[0] == data.shape[2], (
+            "coordinates must match data shape"
+        )
+        assert coordinates[0].shape[1] == data.shape[3], (
+            "coordinates must match data shape"
+        )
+        assert coordinates[1].shape[0] == data.shape[2], (
+            "coordinates must match data shape"
+        )
+        assert coordinates[1].shape[1] == data.shape[3], (
+            "coordinates must match data shape"
+        )
+    return _peaksearcher._gaussian_mixture(data, k, coordinates)
 
 
 if __name__ == "__main__":

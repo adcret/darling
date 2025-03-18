@@ -483,7 +483,6 @@ between diffraction vectors Q and not orientation elements of SO(3).</p>
 <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">kam</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;plasma&quot;</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
 <img alt="_images/kam.png" src="_images/kam.png" />
@@ -656,6 +655,139 @@ are recomputed on the fly.</p></li>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="darling.properties.gaussian_mixture">
+<span class="sig-prename descclassname"><span class="pre">darling.properties.</span></span><span class="sig-name descname"><span class="pre">gaussian_mixture</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coordinates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/properties.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.properties.gaussian_mixture" title="Link to this definition">#</a></dt>
+<dd><p>Model a 2D grid of 2D images with a 2D grid of gaussian mixtures.</p>
+<p>For a shape=(m,n,a,b) data array, for each primary pixel i,j, the a,b data array is
+treated as a 2D image and the local maxima are located. Regions are segmented around
+these local maximas such that each secondary pixel in the shape=(a,b) array is
+assigned a label. The segmented regions are then treated as gaussians with mean
+and covariance extracted per label. Additionally, a sereis of features are
+extracted for each label.</p>
+<dl class="simple">
+<dt>Specifically, for each located peak, the following features are extracted:</dt><dd><ul class="simple">
+<li><p>sum_intensity: the sum of the intensity values in the segmented domain</p></li>
+<li><p>number_of_pixels: the number of pixels in the segmented domain</p></li>
+<li><p>mean_row: the mean row position in the segmented domain</p></li>
+<li><p>mean_col: the mean column position in the segmented domain</p></li>
+<li><p>var_row: the variance of the row positions in the segmented domain</p></li>
+<li><p>var_col: the variance of the column positions in the segmented domain</p></li>
+<li><dl class="simple">
+<dt>var_row_col: the covariance of the row and column positions in the segmented</dt><dd><p>domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_pix_row: the row position of the pixel with the highest intensity in</dt><dd><p>the segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_pix_col: the column position of the pixel with the highest intensity</dt><dd><p>in the segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_pix_intensity: the intensity of the pixel with the highest intensity</dt><dd><p>in the segmented domain</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+<dt>Additionally, when motor coordinate arrays are provided we have the following features:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>mean_motor1: the mean motor position for the first motor in the</dt><dd><p>segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>mean_motor2: the mean motor position for the second motor in the</dt><dd><p>segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>var_motor1: the variance of the motor positions for the first motor</dt><dd><p>in the segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>var_motor2: the variance of the motor positions for the second motor</dt><dd><p>in the segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>var_motor1_motor2: the covariance of the motor positions for the first</dt><dd><p>and second motor in the segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_pix_motor1: the motor position for the first motor of the pixel with</dt><dd><p>the highest intensity in the segmented domain</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>max_pix_motor2: the motor position for the second motor of the pixel with</dt><dd><p>the highest intensity in the segmented domain</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">darling</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="c1"># import a small data set from assets known to</span>
+<span class="c1"># comprise crystalline domains</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">coordinates</span> <span class="o">=</span> <span class="n">darling</span><span class="o">.</span><span class="n">assets</span><span class="o">.</span><span class="n">domains</span><span class="p">()</span>
+
+<span class="c1"># compute all the gaussian mixture model features</span>
+<span class="n">features</span> <span class="o">=</span> <span class="n">darling</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">gaussian_mixture</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">coordinates</span><span class="o">=</span><span class="n">coordinates</span><span class="p">)</span>
+
+<span class="c1"># this is a dict like structure that can be accessed like this:</span>
+<span class="n">sum_intensity_second_strongest_peak</span> <span class="o">=</span> <span class="n">features</span><span class="p">[</span><span class="s2">&quot;sum_intensity&quot;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+<span class="c1"># plot the mean in the first motor direction for the strongest peak</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;dark_background&quot;</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">features</span><span class="p">[</span><span class="s2">&quot;mean_motor1&quot;</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;plasma&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+<img alt="_images/domains.png" src="_images/domains.png" />
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Array of shape=(m, n, a, b) where the maps over
+which the mean will be calculated are of shape=(m, n) and the field is
+of shape=(a, b) such that data[:,:,i,j] is an intensity distribution for
+pixel i,j.</p></li>
+<li><p><strong>k</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">int</span></code>) – The number of gaussians to fit to the data. Defaults to 8.
+this means that the k strongest peaks, with respect to intensity, will be
+fitted with gaussians. The remaining peaks will be ignored.</p></li>
+<li><p><strong>coordinates</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – Tuple of len=2 containing
+numpy 2d arrays specifying the coordinates of shape=(m,n) respectively.
+I.e, as an example, these could be the phi and chi angular cooridnates.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>features as a dictionary containing the extracted features for</dt><dd><p>each peak with keys as specified above. i.e features[“sum_intensity”][…, i]
+is a 2D image where each pixel holds the summed intensity of the i-th
+strongest peak. Likewise features[“mean_row”][…, i] is the mean row
+position of the i-th strongest peak etc.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">dict</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -993,6 +1125,11 @@ defaults to None, in which case all data is loaded</p></li>
 <dd></dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="darling.assets.domains">
+<span class="sig-prename descclassname"><span class="pre">darling.assets.</span></span><span class="sig-name descname"><span class="pre">domains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.1'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/assets.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.assets.domains" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="darling.assets.motor_drift">
 <span class="sig-prename descclassname"><span class="pre">darling.assets.</span></span><span class="sig-name descname"><span class="pre">motor_drift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.1'</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/assets.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.assets.motor_drift" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
@@ -1165,6 +1302,7 @@ scan_params[“data_name”]</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.properties.moments"><code class="docutils literal notranslate"><span class="pre">moments()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.properties.mean"><code class="docutils literal notranslate"><span class="pre">mean()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.properties.covariance"><code class="docutils literal notranslate"><span class="pre">covariance()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.properties.gaussian_mixture"><code class="docutils literal notranslate"><span class="pre">gaussian_mixture()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-darling._dataset">DataSet</a><ul class="nav section-nav flex-column">
@@ -1199,6 +1337,7 @@ scan_params[“data_name”]</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-darling.assets">assets</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.assets.path"><code class="docutils literal notranslate"><span class="pre">path()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.assets.domains"><code class="docutils literal notranslate"><span class="pre">domains()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.assets.motor_drift"><code class="docutils literal notranslate"><span class="pre">motor_drift()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.assets.mosaicity_scan"><code class="docutils literal notranslate"><span class="pre">mosaicity_scan()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.assets.energy_scan"><code class="docutils literal notranslate"><span class="pre">energy_scan()</span></code></a></li>
