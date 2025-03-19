@@ -529,11 +529,11 @@ class TestGaussianMixture(unittest.TestCase):
             coordinates=self.coordinates,
         )
 
-        for key in darling._peaksearcher._FEATURE_MAPPING:
+        for key in darling.peaksearcher._FEATURE_MAPPING:
             self.assertTrue(key in features)
 
-        for key in darling._peaksearcher._MOTOR_KEY_MAPPING:
-            self.assertTrue(darling._peaksearcher._MOTOR_KEY_MAPPING[key] in features)
+        for key in darling.peaksearcher._MOTOR_KEY_MAPPING:
+            self.assertTrue(darling.peaksearcher._MOTOR_KEY_MAPPING[key] in features)
 
         for key in features:
             self.assertEqual(features[key].shape[0], self.data.shape[0])

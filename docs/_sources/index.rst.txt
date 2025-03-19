@@ -13,6 +13,14 @@ properties
     :show-inheritance:
 
 ======================================
+peaksearcher
+======================================
+
+.. automodule:: darling.peaksearcher
+    :members:
+    :show-inheritance:
+
+======================================
 DataSet
 ======================================
 

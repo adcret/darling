@@ -34,7 +34,7 @@ import numba
 import numpy as np
 
 import darling._color as color
-import darling._peaksearcher as _peaksearcher
+import darling.peaksearcher as peaksearcher
 
 
 def rgb(property_2d, norm="dynamic", coordinates=None):
@@ -547,44 +547,37 @@ def _kam(property_2d, km, kn, kam_map, counts_map):
 def gaussian_mixture(data, k=8, coordinates=None):
     """Model a 2D grid of 2D images with a 2D grid of gaussian mixtures.
 
-    For a shape=(m,n,a,b) data array, for each primary pixel i,j, the a,b data array is
-    treated as a 2D image and the local maxima are located. Regions are segmented around
-    these local maximas such that each secondary pixel in the shape=(a,b) array is
-    assigned a label. The segmented regions are then treated as gaussians with mean
-    and covariance extracted per label. Additionally, a sereis of features are
-    extracted for each label.
+    For a data array of shape (m, n, a, b), each primary pixel (i, j) contains a
+    (a, b) sub-array that is analyzed as a 2D image. Local maxima are identified
+    within this sub-array, and segmentation is performed to assign a label to
+    each secondary pixel.
+
+    Each segmented region is treated as a Gaussian, with mean and covariance
+    extracted for each label. Additionally, a set of features is computed
+    for each label.
 
     Specifically, for each located peak, the following features are extracted:
-        - sum_intensity: the sum of the intensity values in the segmented domain
-        - number_of_pixels: the number of pixels in the segmented domain
-        - mean_row: the mean row position in the segmented domain
-        - mean_col: the mean column position in the segmented domain
-        - var_row: the variance of the row positions in the segmented domain
-        - var_col: the variance of the column positions in the segmented domain
-        - var_row_col: the covariance of the row and column positions in the segmented
-            domain
-        - max_pix_row: the row position of the pixel with the highest intensity in
-            the segmented domain
-        - max_pix_col: the column position of the pixel with the highest intensity
-            in the segmented domain
-        - max_pix_intensity: the intensity of the pixel with the highest intensity
-            in the segmented domain
 
-    Additionally, when motor coordinate arrays are provided we have the following features:
-        - mean_motor1: the mean motor position for the first motor in the
-            segmented domain
-        - mean_motor2: the mean motor position for the second motor in the
-            segmented domain
-        - var_motor1: the variance of the motor positions for the first motor
-            in the segmented domain
-        - var_motor2: the variance of the motor positions for the second motor
-            in the segmented domain
-        - var_motor1_motor2: the covariance of the motor positions for the first
-            and second motor in the segmented domain
-        - max_pix_motor1: the motor position for the first motor of the pixel with
-            the highest intensity in the segmented domain
-        - max_pix_motor2: the motor position for the second motor of the pixel with
-            the highest intensity in the segmented domain
+    - **sum_intensity**: Sum of the intensity values in the segmented domain.
+    - **number_of_pixels**: Number of pixels in the segmented domain.
+    - **mean_row**: Mean row position in the segmented domain.
+    - **mean_col**: Mean column position in the segmented domain.
+    - **var_row**: Variance of the row positions in the segmented domain.
+    - **var_col**: Variance of the column positions in the segmented domain.
+    - **var_row_col**: Covariance of the row and column positions in the segmented domain.
+    - **max_pix_row**: Row position of the pixel with the highest intensity.
+    - **max_pix_col**: Column position of the pixel with the highest intensity.
+    - **max_pix_intensity**: Intensity of the pixel with the highest intensity.
+
+    Additionally, when motor coordinate arrays are provided, the following features are included:
+
+    - **mean_motor1**: Mean motor position for the first motor.
+    - **mean_motor2**: Mean motor position for the second motor.
+    - **var_motor1**: Variance of the motor positions for the first motor.
+    - **var_motor2**: Variance of the motor positions for the second motor.
+    - **var_motor1_motor2**: Covariance of the motor positions for the first and second motor.
+    - **max_pix_motor1**: Motor position for the first motor of the pixel with the highest intensity.
+    - **max_pix_motor2**: Motor position for the second motor of the pixel with the highest intensity.
 
     Example:
 
@@ -651,7 +644,7 @@ def gaussian_mixture(data, k=8, coordinates=None):
         assert coordinates[1].shape[1] == data.shape[3], (
             "coordinates must match data shape"
         )
-    return _peaksearcher._gaussian_mixture(data, k, coordinates)
+    return peaksearcher._gaussian_mixture(data, k, coordinates)
 
 
 if __name__ == "__main__":

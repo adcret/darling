@@ -5,47 +5,33 @@ of features from these domains. The algorithm is based on a gradient ascent in t
 moving in a manhattan-like fashion. The algorithm is implemented in numba and can be run in
 parallel.
 
-NOTE: This module is an internal module of darling and is meant to be interfaced by
-calling the darling.properties.gaussian_mixture() function. The following documentation
-is therefore primarily meant for developers.
-
 The final result is a gaussian mixture model of a grid of images. The features extracted
 from the segmented domains are stored in a feature table. The feature table is a dictionary
 with keys corresponding to the features extracted from the segmented domains. The feature
 table can be converted to motor positions if motor positions are provided.
 
 Specifically, for each located peak, the following features are extracted:
-    - sum_intensity: the sum of the intensity values in the segmented domain
-    - number_of_pixels: the number of pixels in the segmented domain
-    - mean_row: the mean row position in the segmented domain
-    - mean_col: the mean column position in the segmented domain
-    - var_row: the variance of the row positions in the segmented domain
-    - var_col: the variance of the column positions in the segmented domain
-    - var_row_col: the covariance of the row and column positions in the segmented
-        domain
-    - max_pix_row: the row position of the pixel with the highest intensity in
-        the segmented domain
-    - max_pix_col: the column position of the pixel with the highest intensity
-        in the segmented domain
-    - max_pix_intensity: the intensity of the pixel with the highest intensity
-        in the segmented domain
 
-    Additionally, when motor coordinate arrays are provided we have the
-        following features:
-    - mean_motor1: the mean motor position for the first motor in the
-        segmented domain
-    - mean_motor2: the mean motor position for the second motor in the
-        segmented domain
-    - var_motor1: the variance of the motor positions for the first motor
-        in the segmented domain
-    - var_motor2: the variance of the motor positions for the second motor
-        in the segmented domain
-    - var_motor1_motor2: the covariance of the motor positions for the first
-        and second motor in the segmented domain
-    - max_pix_motor1: the motor position for the first motor of the pixel with
-        the highest intensity in the segmented domain
-    - max_pix_motor2: the motor position for the second motor of the pixel with
-        the highest intensity in the segmented domain
+    - **sum_intensity**: Sum of the intensity values in the segmented domain.
+    - **number_of_pixels**: Number of pixels in the segmented domain.
+    - **mean_row**: Mean row position in the segmented domain.
+    - **mean_col**: Mean column position in the segmented domain.
+    - **var_row**: Variance of the row positions in the segmented domain.
+    - **var_col**: Variance of the column positions in the segmented domain.
+    - **var_row_col**: Covariance of the row and column positions in the segmented domain.
+    - **max_pix_row**: Row position of the pixel with the highest intensity.
+    - **max_pix_col**: Column position of the pixel with the highest intensity.
+    - **max_pix_intensity**: Intensity of the pixel with the highest intensity.
+
+Additionally, when motor coordinate arrays are provided, the following features are included:
+
+    - **mean_motor1**: Mean motor position for the first motor.
+    - **mean_motor2**: Mean motor position for the second motor.
+    - **var_motor1**: Variance of the motor positions for the first motor.
+    - **var_motor2**: Variance of the motor positions for the second motor.
+    - **var_motor1_motor2**: Covariance of the motor positions for the first and second motor.
+    - **max_pix_motor1**: Motor position for the first motor of the pixel with the highest intensity.
+    - **max_pix_motor2**: Motor position for the second motor of the pixel with the highest intensity.
 """
 
 import numba
@@ -150,17 +136,53 @@ def _add_motor_dimensions(feature_table_dict, coordinates):
 
 @numba.njit
 def label_sparse(data):
-    """Label pixels to closest local maxima in a 2D image.
+    """Assigns pixels in a 2D image to the closest local maxima.
 
-    Each pixel is assigned a label corresponding to the closest local maxima in the data map.
-    The algorithm roughly works as follows:
-        1. For a given pixel, find the highest-valued neighbor.
-        2. The pixel then moves to this neighbor.
-            a. If the neighbor is already labeled, the label is propagated back to the pixel.
-            b. If the pixel is a local maxima, it is labeled with a new label.
-            c. if neither of the above conditions are met go to 1. and continue the search
-    This procedure results in each pixel in the map being assigned to the closest local maxima
-    by doing a gradient type ascent in the data map moving in a manhattan-like fashion.
+    The algorithm proceeds as follows:
+
+    1. For a given pixel, find the highest-valued neighbor.
+    2. Move the pixel to this neighbor:
+
+        a. If the neighbor is already labeled, propagate the label back to the pixel.
+        b. If the pixel is a local maximum, assign it a new label.
+        c. Otherwise, repeat step 1 until a label is assigned.
+
+    This process ensures that each pixel is assigned to the nearest local maximum
+    through a gradient ascent type climb.
+
+    To illustrate how the local maxclimber algorithm can separate overlapping gaussians
+    we can consider the following example:
+
+    .. code-block:: python
+
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import darling
+
+        # Create a synthetic image with 9 gaussians with a lot of overlap
+        rng = np.random.default_rng(42)
+        x, y = np.meshgrid(np.arange(512), np.arange(512), indexing='ij')
+        img = sum(
+            np.exp(-((x - i) ** 2 + (y - j) ** 2) / (2 * rng.uniform(31, 61) ** 2))
+            for i in range(127, 385, 127) for j in range(127, 385, 127)
+        )
+
+        # Label the image following the local max climber algorithm
+        labeled_array, nfeatures = darling.peaksearcher.label_sparse(img)
+
+        # The segmented image shows how the local maxclimber algorithm has segmented the image
+        # into 9 regions splitting the overlapping gaussians.
+        fig, ax = plt.subplots(1, 2, figsize=(14,7))
+        im = ax[0].imshow(img)
+        fig.colorbar(im, ax=ax[0], fraction=0.046, pad=0.04)
+        im = ax[1].imshow(labeled_array, cmap='tab20')
+        fig.colorbar(im, ax=ax[1], fraction=0.046, pad=0.04)
+        ax[0].set_title("Original image")
+        ax[1].set_title("Labeled image")
+        plt.tight_layout()
+        plt.show()
+
+    .. image:: ../../docs/source/images/labeloverlap.png
 
     Args:
         data (:obj:`numpy.ndarray`): a 2D data map to process. shape=(m,n)
@@ -175,13 +197,13 @@ def label_sparse(data):
 
     # The labeled array is to be filled with labels for each pixel in the data map.
     # The labels are integers starting from 1 and increasing for each new local maxima.
-    labeled_array = np.zeros((m, n), dtype=np.uint8)
+    labeled_array = np.zeros((m, n), dtype=np.uint16)
 
     # tmpi and tmpj are temporary arrays to store the path of the climbing pixel
     # in the data map. The path is stored in these arrays until the pixel reaches
     # a labeled pixel or a local maxima.
-    tmpi = np.zeros((max_iterations,), dtype=np.uint8)
-    tmpj = np.zeros((max_iterations,), dtype=np.uint8)
+    tmpi = np.zeros((max_iterations,), dtype=np.uint16)
+    tmpj = np.zeros((max_iterations,), dtype=np.uint16)
 
     # The current label to propagate is stored in label_to_propagate.
     # when a pixel reaches a labeled pixel or a local maxima, the label is propagated
@@ -291,7 +313,7 @@ def _extract_features(labeled_array, data, nlabels, num_props, k):
         k (:obj:`int`): number of segmented domains to keep features for
             The domain with the highest sum_intensity will be kept.
     Raises:
-        ValueError: if labeled_array contains more than 255 labels
+        ValueError: if labeled_array contains more than 65535 labels.
 
     Returns:
         'numpy array': a 2D array with the extracted features with indices following
@@ -312,8 +334,8 @@ def _extract_features(labeled_array, data, nlabels, num_props, k):
 
     m, n = data.shape
 
-    if nlabels > 255:
-        raise ValueError("Found more features than can be assigned with uint8")
+    if nlabels > 65535:
+        raise ValueError("Found more features than can be assigned with uint16")
 
     feature_table = np.zeros((num_props, np.maximum(k, nlabels)), dtype=float)
 
@@ -382,8 +404,9 @@ def _peaksearch_parallel(data, dum1, dum2, res2):
 
 
 if __name__ == "__main__":
-    import darling
     import matplotlib.pyplot as plt
+
+    import darling
 
     # import a small data set from assets known to
     # comprise crystalline domains
