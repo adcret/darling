@@ -60,6 +60,7 @@ class ID03(object):
         self.motor_map = {
             "chi": "instrument/chi/value",
             "phi": "instrument/phi/value",
+            "mu": "instrument/positioners/mu",
             "diffrz": "instrument/diffrz/data",
             "diffry": "instrument/diffry/data",
             "diffrx": "instrument/diffrx/data",
