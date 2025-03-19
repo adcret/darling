@@ -162,10 +162,10 @@ def label_sparse(data):
         # Create a synthetic image with 9 gaussians with a lot of overlap
         rng = np.random.default_rng(42)
         x, y = np.meshgrid(np.arange(512), np.arange(512), indexing='ij')
-        img = sum(
-            np.exp(-((x - i) ** 2 + (y - j) ** 2) / (2 * rng.uniform(31, 61) ** 2))
-            for i in range(127, 385, 127) for j in range(127, 385, 127)
-        )
+        img = np.zeros((512, 512))
+        for i in range(127, 385, 127):
+            for j in range(127, 385, 127):
+                img += np.exp(-((x - i) ** 2 + (y - j) ** 2) / (2 * rng.uniform(31, 61) ** 2))
 
         # Label the image following the local max climber algorithm
         labeled_array, nfeatures = darling.peaksearcher.label_sparse(img)
