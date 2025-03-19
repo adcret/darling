@@ -3,6 +3,7 @@ import unittest
 import matplotlib.pyplot as plt
 import numpy as np
 
+import darling
 from darling import assets, properties
 
 
@@ -514,6 +515,170 @@ class TestMoments(unittest.TestCase):
             ax.set_title("Handle nans")
             ax.imshow(rgb_map)
             plt.tight_layout()
+
+
+class TestGaussianMixture(unittest.TestCase):
+    def setUp(self):
+        self.debug = False
+        _, self.data, self.coordinates = assets.domains()
+
+    def test_gaussian_mixture_on_domains_data(self):
+        features = properties.gaussian_mixture(
+            self.data,
+            k=16,
+            coordinates=self.coordinates,
+        )
+
+        for key in darling.peaksearcher._FEATURE_MAPPING:
+            self.assertTrue(key in features)
+
+        for key in darling.peaksearcher._MOTOR_KEY_MAPPING:
+            self.assertTrue(darling.peaksearcher._MOTOR_KEY_MAPPING[key] in features)
+
+        for key in features:
+            self.assertEqual(features[key].shape[0], self.data.shape[0])
+            self.assertEqual(features[key].shape[1], self.data.shape[1])
+            self.assertEqual(features[key].shape[2], 16)
+            self.assertTrue(np.all(np.isfinite(features[key])))
+            self.assertTrue(np.all(np.isreal(features[key])))
+
+        self.assertTrue(np.all(features["sum_intensity"] >= 0))
+        self.assertTrue(np.all(features["number_of_pixels"] >= 0))
+
+        if self.debug:
+            plt.style.use("dark_background")
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 7))
+            im1 = ax1.imshow(features["mean_motor1"][..., 0])
+            fig.colorbar(im1, ax=ax1, fraction=0.046, pad=0.04)
+            im2 = ax2.imshow(features["mean_motor2"][..., 0])
+            fig.colorbar(im2, ax=ax2, fraction=0.046, pad=0.04)
+            plt.tight_layout()
+            plt.show()
+
+    def test_gaussian_mixture(self):
+        data = np.zeros((29, 32, 4, 7), dtype=np.uint16)
+        x = np.linspace(-0.81, 1.00465, 4, dtype=np.float32)
+        y = np.linspace(-0.6, 1.1, 7, dtype=np.float32)
+        X, Y = np.meshgrid(x, y, indexing="ij")
+
+        data[..., 0, 0] = 1
+        data[..., 0, 1] = 2
+        data[..., 3, 3] = 4
+
+        features = properties.gaussian_mixture(
+            data,
+            k=3,
+            coordinates=(X, Y),
+        )
+        rtol = 1e-6
+        atol = 1e-6
+        np.testing.assert_allclose(
+            features["sum_intensity"][..., 1], 3, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["sum_intensity"][..., 0], 4, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["number_of_pixels"][..., 1], 2, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["number_of_pixels"][..., 0], 1, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(features["var_row"][..., 0], 0, atol=atol, rtol=rtol)
+        np.testing.assert_allclose(features["var_row"][..., 1], 0, atol=atol, rtol=rtol)
+
+        np.testing.assert_allclose(features["var_col"][..., 0], 0, atol=atol, rtol=rtol)
+        np.testing.assert_allclose(
+            features["var_col"][..., 1], 1 / 3.0, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["mean_row"][..., 1], 0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["mean_row"][..., 0], 3, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["mean_motor1"][..., 1], x[0], atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["mean_motor1"][..., 0], x[3], atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["mean_col"][..., 1], 2 / 3.0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["mean_col"][..., 0], 3, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["mean_motor2"][..., 1], (y[0] + 2 * y[1]) / 3, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["mean_motor2"][..., 0], y[3], atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["var_motor1"][..., 0], 0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["var_motor1"][..., 1], 0, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["var_motor2"][..., 0], 0, atol=atol, rtol=rtol
+        )
+
+        mean_motor2 = (y[0] + 2 * y[1]) / 3
+        var_motor2 = ((mean_motor2 - y[0]) ** 2 + 2 * (mean_motor2 - y[1]) ** 2) / 2
+        np.testing.assert_allclose(
+            features["var_motor2"][..., 1], var_motor2, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["var_motor1_motor2"][..., 1], 0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["var_row_col"][..., 1], 0, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["var_motor1_motor2"][..., 0], 0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["var_row_col"][..., 0], 0, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_row"][..., 1], 0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_row"][..., 0], 3, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_motor1"][..., 1], x[0], atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_motor1"][..., 0], x[3], atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_motor2"][..., 1], y[1], atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_motor2"][..., 0], y[3], atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_intensity"][..., 1], 2, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_intensity"][..., 0], 4, atol=atol, rtol=rtol
+        )
 
 
 if __name__ == "__main__":

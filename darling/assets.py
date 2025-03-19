@@ -14,6 +14,41 @@ def path():
     return _asset_path
 
 
+def domains(scan_id="1.1"):
+    data_path = os.path.join(
+        _asset_path,
+        "example_data",
+        "domains",
+        "2D_domains.h5",
+    )
+    """load a (tiny) part of a 2d mosaicity scan collected at the ESRF id03. 
+
+    in constrast to mosaicity_scan() this dataset features a domain structure
+    partioned into cells.
+
+    NOTE: due to the domain partitioning this dataset has been inlcuded in the darling
+    assets for unit testing various domain related feature extarction methods such as
+    gaussian fitting.
+
+    Args:
+        scan_id (:obj:`str`): one of 1.1 or 2.1, specifying first or second layer
+            scanned in the sample.
+
+    Returns:
+        data_path (:obj:`str`): absolute path to h5 file.
+        data (:obj:`numpy array`):  Array of shape=(a, b, m, n) with intensity data.
+            ``data[:,:,i,j]`` is a noisy detector image in type uint16 for phi and
+            chi at index i and j respectively.
+        coordinates (:obj:`numpy array`): array of shape=(2,m,n) continaning
+            angle coordinates.
+
+    """
+    reader = darling.reader.MosaScan(data_path)
+    dset = darling.DataSet(reader)
+    dset.load_scan(scan_id)
+    return data_path, dset.data, dset.motors
+
+
 def motor_drift(scan_id="1.1"):
     data_path = os.path.join(
         _asset_path,
