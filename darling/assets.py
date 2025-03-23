@@ -48,6 +48,26 @@ def domains(scan_id="1.1"):
     dset.load_scan(scan_id)
     return data_path, dset.data, dset.motors
 
+def rocking_scan():
+    data_path = os.path.join(
+        _asset_path,
+        "example_data",
+        "rocking_scan_id03",
+        "rocking.h5",
+    )
+    """load a downsampled 1d rocking scan collected at the ESRF id03.
+
+    Returns:
+        data_path (:obj:`str`): absolute path to h5 file.
+        data (:obj:`numpy array`):  Array of shape=(a, b, m, n) with intensity data. ``data[:,:,i,j]`` is a noisy
+            detector image in type uint16 for phi and chi at index i and j respectively.
+        coordinates (:obj:`numpy array`): array of shape=(2,m,n) continaning angle coordinates.
+
+    """
+    reader = darling.reader.RockingScan(data_path)
+    dset = darling.DataSet(reader)
+    dset.load_scan(scan_id="1.1")
+    return data_path, dset.data, dset.motors
 
 def motor_drift(scan_id="1.1"):
     data_path = os.path.join(

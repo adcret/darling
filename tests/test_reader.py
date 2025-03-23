@@ -76,6 +76,50 @@ class TestMosaScan(unittest.TestCase):
         self.assertTrue(motors.dtype == np.float32)
 
 
+class TestRockingScan(unittest.TestCase):
+    # Tests for the darling.RockingScan class.
+
+    def setUp(self):
+        self.debug = False
+        self.path_to_data, _, _ = darling.assets.rocking_scan()
+
+    def test_init(self):
+        # Assert that the reader can be instantiated.
+        reader = darling.reader.RockingScan(self.path_to_data)
+        self.assertTrue(isinstance(reader, darling.reader.RockingScan))
+
+    def test_read(self):
+        # assert that the reader will read data and coordinates of the correct type and
+        # expected shapes.
+        reader = darling.reader.RockingScan(self.path_to_data)
+
+        data, motors = reader(
+            scan_id="1.1",
+        )
+
+        self.check_data(data, motors)
+
+    def test_roi_read(self):
+        # assert that the reader will read a roi
+        reader = darling.reader.RockingScan(
+            self.path_to_data,
+        )
+
+        data, motors = reader(scan_id="1.1", roi=(10, 20, 0, 7))
+
+        self.check_data(data, motors)
+
+        self.assertTrue(data.shape[0] == 10)
+        self.assertTrue(data.shape[1] == 7)
+
+    def check_data(self, data, motors):
+        self.assertTrue(data.dtype == np.uint16)
+        self.assertTrue(len(data.shape) == 3)
+        self.assertTrue(len(motors.shape) == 2)
+        self.assertTrue(data.shape[2] == motors.shape[1])
+        self.assertTrue(motors.dtype == np.float32)
+
+
 class TestEnergyScan(unittest.TestCase):
     # Tests for the darling.MosaScan class.
 
