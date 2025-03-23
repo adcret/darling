@@ -11,9 +11,8 @@ all features of darling.
 import re
 
 import h5py
-import hdf5plugin
-import matplotlib.pyplot as plt
 import numpy as np
+
 import darling
 
 
@@ -113,10 +112,45 @@ class MosaScan(Reader):
             data = data.reshape(
                 (*self.scan_params["scan_shape"], data.shape[-2], data.shape[-1])
             )
-            data = data.swapaxes(0, 2)
+            data = data.swapaxes(0, -2)
             data = data.swapaxes(1, -1)
 
         return data, motors
+
+
+class RockingScan(MosaScan):
+    """Load a 1D rocking scan. This is a id03 specific implementation matphing aspecific beamline mosa scan macro.
+
+    A rocking scan is simply a set of 2D detector images collected at different rocking angles of the goniometer.
+
+    NOTE: This reader was specifically written for data collection at id03. For general purpose reading of data you
+    must implement your own reader class. The exact reding of data is strongly dependent on data aqusition scheme and
+    data structure implementation.
+
+    Args:
+        abs_path_to_h5_file str (:obj:`str`): absolute path to the h5 file with the diffraction images.
+    """
+
+    def __call__(self, scan_id, roi=None):
+        """Load a scan
+
+        this loads the rocking scan data array with shape a,b,m where a,b are the detector dimensions and
+        m is the motor dimensions. You may view the implemented darling readers as example templates
+        for implementing your own reader.
+
+        Args:
+            scan_id (:obj:`str`):scan id to load from, e.g 1.1, 2.1 etc...
+            roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
+                defaults to None, in which case all data is loaded
+
+        Returns:
+            data, motors : data of shape=(a,b,m) and the
+                motor arrays as an array of shape=(k, n)
+                where k is the number of motors used in the
+                scan (i.e k=1 for a rocking scan).
+
+        """
+        return super().__call__(scan_id, roi)
 
 
 class EnergyScan(Reader):

@@ -180,8 +180,11 @@ class ID03(object):
         def get_leaf(name, obj):
             leafs.append(name)
 
+
         with h5py.File(self.abs_path_to_h5_file, "r") as h5f:
             h5f[scan_id].visititems(get_leaf)
+
+
 
             while len(leafs) > 0:
                 leaf = leafs.pop()
