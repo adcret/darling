@@ -278,7 +278,8 @@ class DataSet(object):
                 Defaults to np.float32.
 
         Returns:
-            :obj:`numpy.ndarray`: Integrated frames, a 2D numpy array of shape (m, n) with dtype `dtype`.
+            :obj:`numpy.ndarray`: Integrated frames, a 2D numpy array of reduced
+                shape and dtype `dtype`.
         """
         if axis is None:
             out = np.zeros((self.data.shape[0], self.data.shape[1]), dtype=dtype)
