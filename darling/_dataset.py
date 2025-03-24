@@ -265,16 +265,33 @@ class DataSet(object):
         self.kam_kernel_size = size
         return self.kam
 
-    def integrate(self):
-        """Return the summed data stack along the motor dimensions avoiding data stack copying.
+    def integrate(self, axis=None, dtype=np.float32):
+        """Return the summed data stack along the specified axes, avoiding data stack copying.
+
+        If no axis is specified, the integration is performed over all dimensions
+        except the first two, which are assumed to be the detector dimensions.
+
+        Args:
+            axis (:obj:`int` or :obj:`tuple`, optional): The axis or axes along which to integrate.
+                If None, integrates over all axes except the first two.
+            dtype (:obj:`numpy.dtype`, optional): The data type of the output array.
+                Defaults to np.float32.
 
         Returns:
-            (:obj:`numpy array`): integrated frames, a 2D numpy array.
+            :obj:`numpy.ndarray`: Integrated frames, a 2D numpy array of reduced
+                shape and dtype `dtype`.
         """
-        out = np.zeros(
-            (self.data.shape[0], self.data.shape[1]), np.float32
-        )  # avoid casting and copying.
-        integrated_frames = np.sum(self.data, axis=(2, 3), out=out)
+        if axis is None:
+            out = np.zeros((self.data.shape[0], self.data.shape[1]), dtype=dtype)
+            integrated_frames = np.sum(
+                self.data, axis=tuple(range(2, self.data.ndim)), out=out
+            )
+        else:
+            shape = list(self.data.shape)
+            for ax in sorted(np.atleast_1d(axis), reverse=True):
+                shape.pop(ax)
+            out = np.zeros(shape, dtype=dtype)
+            integrated_frames = np.sum(self.data, axis=axis, out=out)
         return integrated_frames
 
     def estimate_mask(
