@@ -76,20 +76,19 @@ class TestDataSet(unittest.TestCase):
 
     def test_moments(self):
         for i, reader in enumerate(self.readers):
-            if self.names[i] == "rocking":
-                # TODO: implement this for the rocking scan
-                continue
-
             dset = darling.DataSet(reader)
             dset.load_scan(scan_id="1.1", roi=None)
             mean, covariance = dset.moments()
             self.assertEqual(mean.shape[0], dset.data.shape[0])
             self.assertEqual(mean.shape[1], dset.data.shape[1])
-            self.assertEqual(mean.shape[2], 2)
             self.assertEqual(covariance.shape[0], dset.data.shape[0])
             self.assertEqual(covariance.shape[1], dset.data.shape[1])
-            self.assertEqual(covariance.shape[2], 2)
-            self.assertEqual(covariance.shape[3], 2)
+            if len(mean.shape) == 3:
+                self.assertEqual(mean.shape[2], 2)
+                self.assertEqual(covariance.shape[2], 2)
+                self.assertEqual(covariance.shape[3], 2)
+            if len(mean.shape) == 2:
+                self.assertEqual(covariance.shape, mean.shape)
 
             if self.debug:
                 fig, ax = dset.plot.mean()

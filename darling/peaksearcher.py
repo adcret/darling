@@ -96,6 +96,12 @@ def _gaussian_mixture(data, k, coordinates):
     return feature_table_dict
 
 
+def _median(x):
+    if x.size == 0:
+        return np.nan
+    return np.median(x)
+
+
 def _add_motor_dimensions(feature_table_dict, coordinates):
     """Adds motor dimensions to the feature table.
 
@@ -109,10 +115,10 @@ def _add_motor_dimensions(feature_table_dict, coordinates):
             segmented domains with motor positions added according to _MOTOR_KEY_MAPPING.
     """
     X, Y = coordinates
-    dm1 = np.median(np.diff(X, axis=0))
-    dm2 = np.median(np.diff(Y, axis=1))
-    m10 = np.median(X)
-    m20 = np.median(Y)
+    dm1 = _median(np.diff(X, axis=0))
+    dm2 = _median(np.diff(Y, axis=1))
+    m10 = _median(X)
+    m20 = _median(Y)
     for key in ["mean_row", "max_pix_row"]:
         feature_table_dict[_MOTOR_KEY_MAPPING[key]] = (
             feature_table_dict[key] - (X.shape[0] - 1) / 2.0
