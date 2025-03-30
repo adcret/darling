@@ -486,11 +486,16 @@ of shape=(m, n).</p>
 <dt class="sig sig-object py" id="darling.properties.kam">
 <span class="sig-prename descclassname"><span class="pre">darling.properties.</span></span><span class="sig-name descname"><span class="pre">kam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">property_2d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(3,</span> <span class="pre">3)</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/properties.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.properties.kam" title="Link to this definition">#</a></dt>
 <dd><p>Compute the KAM (Kernel Average Misorientation) map of a 2D property map.</p>
-<p>KAM is compute dby sliding a kernel across the image and for each voxel computing
-the average misorientation between the central voxel and the surrounding voxels.</p>
+<p>KAM is computed by sliding a kernel across the image and for each voxel computing
+the average misorientation between the central voxel and the surrounding voxels.
+Here the misorientation is defined as the L2 euclidean distance between the
+(potentially vectorial) property map and the central voxel such that scalars formed
+as for instance np.linalg.norm( property_2d[i + 1, j] - property_2d[i, j] ) are
+computed and averaged over the kernel.</p>
 <p>NOTE: This is a projected KAM in the sense that the rotation the full rotation
 matrix of the voxels are unknown. I.e this is a computation of the misorientation
-between diffraction vectors Q and not orientation elements of SO(3).</p>
+between diffraction vectors Q and not orientation elements of SO(3). For 1D rocking
+scans this is further reduced due to the fact that the roling angle is unknown.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter</span>
@@ -521,9 +526,10 @@ between diffraction vectors Q and not orientation elements of SO(3).</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>property_2d</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">numpy</span> <span class="pre">array</span></code>) – The property map to compute the KAM from,
-shape=(a, b, 2). This is assumed to be the angular coordinates of diffraction.
-such that np.linalg.norm( property_2d[i,j]) gives the mismatch in degrees
-between the reference diffraction vector and the local mean diffraction vector.</p></li>
+shape=(a, b, m) or (a, b). This is assumed to be the angular coordinates of
+diffraction such that np.linalg.norm( property_2d[i,j]) gives the mismatch
+in degrees between the reference diffraction vector and the local mean
+diffraction vector.</p></li>
 <li><p><strong>size</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code>) – The size of the kernel to use for the KAM computation.
 Defaults to (3, 3).</p></li>
 </ul>

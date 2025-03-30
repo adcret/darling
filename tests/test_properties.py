@@ -488,7 +488,7 @@ class TestMoments(unittest.TestCase):
         self.assertEqual(mu.shape[2], 2)
         self.assertEqual(mu.dtype, np.float32)
 
-    def test_kam(self):
+    def test_kam_2d(self):
         mu, _ = properties.moments(self.data, self.coordinates)
         kam = properties.kam(mu, size=(3, 3))
         self.assertEqual(kam.shape[0], self.data.shape[0])
@@ -515,6 +515,21 @@ class TestMoments(unittest.TestCase):
         self.assertEqual(kam[6 - 1, 6], 3 / 8.0)
         self.assertEqual(kam[6 - 2, 6], 3 / 8.0)
         self.assertEqual(np.sum(kam), 8)
+
+        if self.debug:
+            plt.style.use("dark_background")
+            fig, ax = plt.subplots(1, 1, figsize=(7, 7))
+            im = ax.imshow(kam)
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+            plt.tight_layout()
+            plt.show()
+
+    def test_kam_1d(self):
+        _, data, coordinates = darling.assets.rocking_scan()
+        mean, _ = properties.moments(data, coordinates)
+        kam = properties.kam(mean, size=(3, 3))
+        self.assertEqual(kam.shape[0], data.shape[0])
+        self.assertEqual(kam.shape[1], data.shape[1])
 
         if self.debug:
             plt.style.use("dark_background")
