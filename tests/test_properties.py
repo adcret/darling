@@ -14,7 +14,46 @@ class TestMoments(unittest.TestCase):
         self.debug = False
         _, self.data, self.coordinates = assets.mosaicity_scan()
 
-    def test_mean(self):
+    def test_mean_1D(self):
+        # Test that a series of displaced gaussians gives back the input mean
+        # coordinates with precision better than the cooridinate resolution.
+
+        # Data creation
+        x = np.linspace(-1, 1, 32, dtype=np.float32)
+        sigma = x[2] - x[0]
+        N = 32
+        data = np.zeros((N, N, len(x)))
+        true_mean = np.zeros((N, N))
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                x0 = -sigma * (i / N) + 2 * sigma * (j / N)
+                data[i, j] = np.exp(-((x - x0) ** 2) / (2 * sigma**2)) * 65535
+                true_mean[i, j] = x0
+        data = data.round().astype(np.uint16)
+
+        # Compute mean values
+        mu = properties.mean(data, coordinates=x[None, :])
+
+        # Check that error is within the x,y resolution
+        resolution = x[1] - x[0]
+        relative_error = (true_mean - mu) / resolution
+        np.testing.assert_array_less(
+            np.abs(relative_error), np.ones_like(relative_error)
+        )
+
+        if self.debug:
+            plt.style.use("dark_background")
+            fig, ax = plt.subplots(1, 3, figsize=(6, 8))
+            im = ax[0].imshow(mu)
+            fig.colorbar(im, ax=ax[0], fraction=0.046, pad=0.04)
+            im = ax[1].imshow(true_mean)
+            fig.colorbar(im, ax=ax[1], fraction=0.046, pad=0.04)
+            im = ax[2].imshow(relative_error, cmap="jet")
+            fig.colorbar(im, ax=ax[2], fraction=0.046, pad=0.04)
+            plt.tight_layout()
+            plt.show()
+
+    def test_mean_2D(self):
         # Test that a series of displaced gaussians gives back the input mean
         # coordinates with precision better than the cooridinate resolution.
 
@@ -29,7 +68,7 @@ class TestMoments(unittest.TestCase):
             for j in range(data.shape[1]):
                 x0, y0 = sigma * i / N, sigma * j / N - 0.5 * sigma * i / N
                 data[i, j] = (
-                    np.exp(-((X - x0) ** 2 + (Y - y0) ** 2) / (2 * sigma**2)) * 64000
+                    np.exp(-((X - x0) ** 2 + (Y - y0) ** 2) / (2 * sigma**2)) * 65535
                 )
                 true_mean.append([x0, y0])
         true_mean = np.array(true_mean).reshape(N, N, 2)
@@ -41,7 +80,9 @@ class TestMoments(unittest.TestCase):
         # Check that error is within the x,y resolution
         resolution = x[1] - x[0]
         relative_error = (true_mean - mu) / resolution
-        np.testing.assert_array_less(relative_error, np.ones_like(relative_error))
+        np.testing.assert_array_less(
+            np.abs(relative_error), np.ones_like(relative_error)
+        )
 
         if self.debug:
             plt.style.use("dark_background")
@@ -79,7 +120,7 @@ class TestMoments(unittest.TestCase):
                         -((X - x0) ** 2 + (Y - y0) ** 2 + (Z - z0) ** 2)
                         / (2 * sigma**2)
                     )
-                    * 64000
+                    * 65535
                 )
                 true_mean.append([x0, y0, z0])
         true_mean = np.array(true_mean).reshape(N, M, 3)
@@ -89,6 +130,10 @@ class TestMoments(unittest.TestCase):
 
         resolution = x[1] - x[0]
         relative_error = (true_mean - mu) / resolution
+
+        np.testing.assert_array_less(
+            np.abs(relative_error), np.ones_like(relative_error)
+        )
 
         if self.debug:
             plt.style.use("dark_background")
@@ -105,7 +150,7 @@ class TestMoments(unittest.TestCase):
             plt.tight_layout()
             plt.show()
 
-    def test_mean_noisy(self):
+    def test_mean_2d_noisy(self):
         # Simply assert that the mean function runs on real noisy data from id03.
         mu = properties.mean(self.data, self.coordinates)
         self.assertEqual(mu.shape[0], self.data.shape[0])
@@ -122,10 +167,48 @@ class TestMoments(unittest.TestCase):
             plt.tight_layout()
             plt.show()
 
-    def test_covariance(self):
+    def test_covariance_1d(self):
         # Test that a series of displaced gaussians with different covariance
-        # gives back the input covariance with precision better than the cooridinate
-        # resolution, given that the gaussian blob fits the coordinate range.
+        # gives back the input covariance with precision better than 0.1%
+
+        # Data creation
+        x = np.linspace(-1, 1, 32, dtype=np.float32)
+        sigma0 = 2 * (x[1] - x[0])  # can not be too low due to uint16 clip
+        N = 32
+        data = np.zeros((N, N, len(x)))
+        true_variance = np.zeros((N, N))
+        for i in range(data.shape[0]):
+            for j in range(data.shape[1]):
+                x0 = sigma0 * i / (N)
+                S = sigma0 + 0.5 * sigma0 * i / N
+                data[i, j] = np.exp(-0.5 * ((x - x0) ** 2 / (S**2))) * 65535
+                true_variance[i, j] = S**2
+        data = data.round().astype(np.uint16)
+
+        # Compute covariance values
+        cov = properties.covariance(data, coordinates=x[None, :])
+
+        # Check that error is within the resolution
+        relative_error = (np.sqrt(true_variance) - np.sqrt(cov)) / sigma0
+        np.testing.assert_array_less(
+            np.abs(relative_error), np.ones_like(relative_error) * 0.001
+        )
+
+        if self.debug:
+            plt.style.use("dark_background")
+            fig, ax = plt.subplots(1, 3, figsize=(8, 6))
+            im = ax[0].imshow(np.sqrt(cov) / sigma0)
+            fig.colorbar(im, ax=ax[0], fraction=0.046, pad=0.04)
+            im = ax[1].imshow(np.sqrt(true_variance) / sigma0)
+            fig.colorbar(im, ax=ax[1], fraction=0.046, pad=0.04)
+            im = ax[2].imshow(np.abs(relative_error), cmap="jet")
+            fig.colorbar(im, ax=ax[2], fraction=0.046, pad=0.04)
+            plt.tight_layout()
+            plt.show()
+
+    def test_covariance_2d(self):
+        # Test that a series of displaced gaussians with different covariance
+        # gives back the input covariance with precision better than 1%
 
         # Data creation
         x = y = np.linspace(-1, 1, 9, dtype=np.float32)
@@ -143,46 +226,46 @@ class TestMoments(unittest.TestCase):
                 Si = 1.0 / np.diag(S)
                 data[i, j] = (
                     np.exp(-0.5 * (Si[0] * (X - x0) ** 2 + Si[1] * (Y - y0) ** 2))
-                    * 64000
+                    * 65535
                 )
                 true_variance.append(S.copy())
         true_variance = np.array(true_variance).reshape(N, N, 2, 2)
         data = data.round().astype(np.uint16)
 
-        # Compute covariance values
         cov = properties.covariance(data, coordinates=np.array([X, Y]))
 
-        # Check that error is within the x,y resolution
-        resolution = x[1] - x[0]
-        relative_error = (true_variance - cov) / resolution**2
-        np.testing.assert_array_less(
-            relative_error[:, :, 0, 0], np.ones_like(relative_error[:, :, 0, 0])
-        )
-        np.testing.assert_array_less(
-            relative_error[:, :, 1, 1], np.ones_like(relative_error[:, :, 1, 1])
-        )
-        np.testing.assert_allclose(cov[:, :, 0, 1], 0, atol=sigma0 * 1e-3)
-        np.testing.assert_allclose(cov[:, :, 1, 0], 0, atol=sigma0 * 1e-3)
+        for i in range(cov.shape[2]):
+            np.testing.assert_allclose(
+                np.sqrt(true_variance[..., i, i]),
+                np.sqrt(cov[..., i, i]),
+                atol=sigma0 * 1e-3,
+                rtol=0.01,
+            )
+
+        for i in range(cov.shape[2]):
+            for j in range(cov.shape[3]):
+                if i != j:
+                    np.testing.assert_allclose(cov[..., i, j], 0, atol=sigma0 * 1e-3)
 
         if self.debug:
+            error = np.sqrt(true_variance) - np.sqrt(cov)
             plt.style.use("dark_background")
-            fig, ax = plt.subplots(3, 2, figsize=(6, 8))
-            for i in range(2):  # computed covariance
-                im = ax[0, i].imshow(np.sqrt(cov[:, :, i, i]))
+            fig, ax = plt.subplots(3, cov.shape[2], figsize=(6, 8))
+            for i in range(cov.shape[2]):  # computed covariance
+                im = ax[0, i].imshow(np.sqrt(cov[..., i, i]))
                 fig.colorbar(im, ax=ax[0, i], fraction=0.046, pad=0.04)
-            for i in range(2):  # true covariance
-                im = ax[1, i].imshow(np.sqrt(true_variance[:, :, i, i]))
+            for i in range(cov.shape[2]):  # true covariance
+                im = ax[1, i].imshow(np.sqrt(true_variance[..., i, i]))
                 fig.colorbar(im, ax=ax[1, i], fraction=0.046, pad=0.04)
-            for i in range(2):  # relative error
-                im = ax[2, i].imshow(relative_error[:, :, i, i], cmap="jet")
+            for i in range(cov.shape[2]):  # relative error
+                im = ax[2, i].imshow(error[..., i, i], cmap="jet")
                 fig.colorbar(im, ax=ax[2, i], fraction=0.046, pad=0.04)
             plt.tight_layout()
             plt.show()
 
     def test_covariance_3d(self):
         # Test that a series of displaced gaussians with different covariance
-        # gives back the input covariance with precision better than the cooridinate
-        # resolution, given that the gaussian blob fits the coordinate range.
+        # gives back the input covariance with precision better than 1%
 
         # Data creation
         x = y = z = np.linspace(-1, 1, 9, dtype=np.float32)
@@ -213,45 +296,39 @@ class TestMoments(unittest.TestCase):
                             + Si[2] * (Z - z0) ** 2
                         )
                     )
-                    * 64000
+                    * 65535
                 )
                 true_variance.append(S.copy())
         true_variance = np.array(true_variance).reshape(N, N, 3, 3)
         data = data.round().astype(np.uint16)
 
-        # Compute covariance values
         cov = properties.covariance(data, coordinates=np.array([X, Y, Z]))
 
-        # Check that error is within the x,y resolution
-        resolution = x[1] - x[0]
-        relative_error = (true_variance - cov) / resolution**2
-        np.testing.assert_array_less(
-            relative_error[:, :, 0, 0], np.ones_like(relative_error[:, :, 0, 0])
-        )
-        np.testing.assert_array_less(
-            relative_error[:, :, 1, 1], np.ones_like(relative_error[:, :, 1, 1])
-        )
-        np.testing.assert_array_less(
-            relative_error[:, :, 2, 2], np.ones_like(relative_error[:, :, 2, 2])
-        )
-        np.testing.assert_allclose(cov[:, :, 0, 1], 0, atol=sigma0 * 1e-3)
-        np.testing.assert_allclose(cov[:, :, 1, 0], 0, atol=sigma0 * 1e-3)
-        np.testing.assert_allclose(cov[:, :, 0, 2], 0, atol=sigma0 * 1e-3)
-        np.testing.assert_allclose(cov[:, :, 2, 0], 0, atol=sigma0 * 1e-3)
-        np.testing.assert_allclose(cov[:, :, 1, 2], 0, atol=sigma0 * 1e-3)
-        np.testing.assert_allclose(cov[:, :, 2, 1], 0, atol=sigma0 * 1e-3)
+        for i in range(cov.shape[2]):
+            np.testing.assert_allclose(
+                np.sqrt(true_variance[..., i, i]),
+                np.sqrt(cov[..., i, i]),
+                atol=sigma0 * 1e-3,
+                rtol=0.01,
+            )
+
+        for i in range(cov.shape[2]):
+            for j in range(cov.shape[3]):
+                if i != j:
+                    np.testing.assert_allclose(cov[..., i, j], 0, atol=sigma0 * 1e-3)
 
         if self.debug:
+            error = np.sqrt(true_variance) - np.sqrt(cov)
             plt.style.use("dark_background")
-            fig, ax = plt.subplots(3, 3, figsize=(6, 8))
-            for i in range(3):  # computed covariance
-                im = ax[0, i].imshow(np.sqrt(cov[:, :, i, i]))
+            fig, ax = plt.subplots(3, cov.shape[2], figsize=(6, 8))
+            for i in range(cov.shape[2]):  # computed covariance
+                im = ax[0, i].imshow(np.sqrt(cov[..., i, i]))
                 fig.colorbar(im, ax=ax[0, i], fraction=0.046, pad=0.04)
-            for i in range(3):  # true covariance
-                im = ax[1, i].imshow(np.sqrt(true_variance[:, :, i, i]))
+            for i in range(cov.shape[2]):  # true covariance
+                im = ax[1, i].imshow(np.sqrt(true_variance[..., i, i]))
                 fig.colorbar(im, ax=ax[1, i], fraction=0.046, pad=0.04)
-            for i in range(3):  # relative error
-                im = ax[2, i].imshow(relative_error[:, :, i, i], cmap="jet")
+            for i in range(cov.shape[2]):  # relative error
+                im = ax[2, i].imshow(error[..., i, i], cmap="jet")
                 fig.colorbar(im, ax=ax[2, i], fraction=0.046, pad=0.04)
             plt.tight_layout()
             plt.show()
@@ -296,7 +373,7 @@ class TestMoments(unittest.TestCase):
                 Si = 1.0 / np.diag(S)
                 data[i, j] = (
                     np.exp(-0.5 * (Si[0] * (X - x0) ** 2 + Si[1] * (Y - y0) ** 2))
-                    * 64000
+                    * 65535
                 )
 
                 true_variance.append(S.copy())
@@ -362,7 +439,7 @@ class TestMoments(unittest.TestCase):
                             + Si[2] * (Z - z0) ** 2
                         )
                     )
-                    * 64000
+                    * 65535
                 )
                 true_variance.append(S.copy())
                 true_mean.append([x0, y0, z0])
@@ -679,6 +756,91 @@ class TestGaussianMixture(unittest.TestCase):
         np.testing.assert_allclose(
             features["max_pix_intensity"][..., 0], 4, atol=atol, rtol=rtol
         )
+
+    def test_gaussian_mixture_rocking_scan(self):
+        data = np.zeros((29, 32, 9), dtype=np.uint16)
+        x = np.linspace(-0.81, 1.00465, 9, dtype=np.float32)
+
+        data[..., 0] = 1
+        data[..., 1] = 2
+        data[..., 3] = 4
+
+        features = properties.gaussian_mixture(
+            data,
+            k=3,
+            coordinates=x.reshape(1, -1),
+        )
+        rtol = 1e-6
+        atol = 1e-6
+        np.testing.assert_allclose(
+            features["sum_intensity"][..., 1], 3, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["sum_intensity"][..., 0], 4, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["number_of_pixels"][..., 1], 2, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["number_of_pixels"][..., 0], 1, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["mean_row"][..., 1],
+            (0 * 1 + 2 * 1) / (2 + 1),
+            atol=atol,
+            rtol=rtol,
+        )
+        np.testing.assert_allclose(
+            features["mean_row"][..., 0], 3, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(features["var_row"][..., 0], 0, atol=atol, rtol=rtol)
+        np.testing.assert_allclose(
+            features["var_row"][..., 1], 1 / 3.0, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["var_motor1"][..., 0], 0, atol=atol, rtol=rtol
+        )
+
+        mean_motor1 = (x[0] + 2 * x[1]) / 3
+        var_motor1 = ((mean_motor1 - x[0]) ** 2 + 2 * (mean_motor1 - x[1]) ** 2) / 2
+        np.testing.assert_allclose(
+            features["var_motor1"][..., 1], var_motor1, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["mean_motor1"][..., 1],
+            (x[0] * 1 + 2 * x[1]) / (2 + 1),
+            atol=atol,
+            rtol=rtol,
+        )
+        np.testing.assert_allclose(
+            features["mean_motor1"][..., 0], x[3], atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_row"][..., 1], 1, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_row"][..., 0], 3, atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_motor1"][..., 1], x[1], atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_motor1"][..., 0], x[3], atol=atol, rtol=rtol
+        )
+
+        np.testing.assert_allclose(
+            features["max_pix_intensity"][..., 1], 2, atol=atol, rtol=rtol
+        )
+        np.testing.assert_allclose(
+            features["max_pix_intensity"][..., 0], 4, atol=atol, rtol=rtol
+        )
+        for key in features.keys():
+            self.assertTrue("_col" not in key)
+            self.assertTrue("_motor2" not in key)
 
 
 if __name__ == "__main__":
