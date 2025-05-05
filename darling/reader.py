@@ -115,6 +115,68 @@ class MosaScan(Reader):
             data = data.swapaxes(0, -2)
             data = data.swapaxes(1, -1)
 
+        # ensure that the data is on a monotonically increasing grid (zigzag scans etc)
+        # TODO: this is an inplace-operation, and will produce a temporary copy of the entire dataset....
+        s = np.array(
+            list(zip(motors[0].flatten(), motors[1].flatten())),
+            dtype=[("m1", "f8"), ("m2", "f8")],
+        )
+        frame_indices = np.argsort(s, order=["m1", "m2"])
+        a, b, m, n = data.shape
+        data = data.reshape(a, b, m * n)[..., frame_indices].reshape(a, b, m, n)
+        motors[0, :] = motors[0, :].flatten()[frame_indices].reshape(m, n)
+        motors[1, :] = motors[1, :].flatten()[frame_indices].reshape(m, n)
+
+        return data, motors
+
+
+class Darks(MosaScan):
+    """Load a series of motorless images. This is a id03 specific implementation matphing aspecific beamline mosa scan macro.
+
+    Typically used to red dark images collected with a loopscan.
+
+    NOTE: This reader was specifically written for data collection at id03. For general purpose reading of data you
+    must implement your own reader class. The exact reding of data is strongly dependent on data aqusition scheme and
+    data structure implementation.
+
+    Args:
+        abs_path_to_h5_file str (:obj:`str`): absolute path to the h5 file with the diffraction images.
+    """
+
+    def __call__(self, scan_id, roi=None):
+        """Load a scan
+
+        this loads the static scan data array with shape a,b,m where a,b are the detector dimensions and
+        m is the number of (motorless) images. You may view the implemented darling readers as example templates
+        for implementing your own reader.
+
+        Args:
+            scan_id (:obj:`str`):scan id to load from, e.g 1.1, 2.1 etc...
+            roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
+                defaults to None, in which case all data is loaded
+
+        Returns:
+            data, motors : data of shape=(a,b,m) and an empty motor array.
+
+        """
+
+        self.scan_params = self.config(scan_id)
+
+        with h5py.File(self.abs_path_to_h5_file, "r") as h5f:
+            motors = np.array([], dtype=np.float32)
+
+            if roi:
+                r1, r2, c1, c2 = roi
+                data = h5f[scan_id][self.scan_params["data_name"]][:, r1:r2, c1:c2]
+            else:
+                data = h5f[scan_id][self.scan_params["data_name"]][:, :, :]
+
+            data = data.reshape(
+                (*self.scan_params["scan_shape"], data.shape[-2], data.shape[-1])
+            )
+            data = data.swapaxes(0, -2)
+            data = data.swapaxes(1, -1)
+
         return data, motors
 
 
@@ -150,7 +212,40 @@ class RockingScan(MosaScan):
                 scan (i.e k=1 for a rocking scan).
 
         """
-        return super().__call__(scan_id, roi)
+
+        self.scan_params = self.config(scan_id)
+
+        with h5py.File(self.abs_path_to_h5_file, "r") as h5f:
+            # Read in motrs
+            motors = [
+                h5f[scan_id][mn][...].reshape(*self.scan_params["scan_shape"])
+                for mn in self.scan_params["motor_names"]
+            ]
+            motors = np.array(motors).astype(np.float32)
+
+            # read in data and reshape
+            if roi:
+                r1, r2, c1, c2 = roi
+                data = h5f[scan_id][self.scan_params["data_name"]][:, r1:r2, c1:c2]
+            else:
+                data = h5f[scan_id][self.scan_params["data_name"]][:, :, :]
+
+            data = data.reshape(
+                (*self.scan_params["scan_shape"], data.shape[-2], data.shape[-1])
+            )
+            data = data.swapaxes(0, -2)
+            data = data.swapaxes(1, -1)
+
+        # ensure that the data is on a monotonically increasing grid (zigzag scans etc)
+        # TODO: this is an inplace-operation, and will produce a temporary copy of the entire dataset....
+
+        # ensure that the data is on a monotonically increasing grid (zigzag scans etc)
+        frame_indices = np.argsort(motors[0].flatten())
+        a, b, m = data.shape
+        data = data[..., frame_indices]
+        motors[0, :] = motors[0, frame_indices]
+
+        return data, motors
 
 
 class EnergyScan(Reader):

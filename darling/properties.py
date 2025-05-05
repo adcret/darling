@@ -103,8 +103,16 @@ def rgb(property_2d, norm="dynamic", coordinates=None):
     """
     if norm == "full":
         norm = np.zeros((2, 2))
-        norm[0] = np.min(coordinates[0]), np.max(coordinates[0])
-        norm[1] = np.min(coordinates[1]), np.max(coordinates[1])
+
+        # handles rounding errors in property map.
+        width_0 = np.max(coordinates[0]) - np.min(coordinates[0])
+        pad_0 = width_0 * 0.001
+        width_1 = np.max(coordinates[1]) - np.min(coordinates[1])
+        pad_1 = width_1 * 0.001
+
+        norm[0] = np.min(coordinates[0]) - pad_0, np.max(coordinates[0]) + pad_0
+        norm[1] = np.min(coordinates[1]) - pad_1, np.max(coordinates[1]) + pad_1
+
     elif norm == "dynamic":
         norm = np.zeros((2, 2))
         norm[0] = np.nanmin(property_2d[..., 0]), np.nanmax(property_2d[..., 0])
