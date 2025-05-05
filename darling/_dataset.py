@@ -166,40 +166,74 @@ class _Visualizer(object):
 class DataSet(object):
     """A DFXM data-set.
 
-    This is the master data class of darling. Given a reader the DataSet class will read data form
+    This is the master data class of darling. Given a data source the DataSet class will read data from
     arbitrary layers, process, threshold, compute moments, visualize results, and compile 3D feature maps.
 
     Args:
-        reader (:obj: `darling.reader.Reader`): A file reader implementing, at least, the functionallity
-            specified in darling.reader.Reader().
+        data_source (:obj: `string` or `darling.reader.Reader`): A string to the absolute h5 file path
+            location of the data, or a reader object implementing the darling.reader.Reader() interface.
 
     Attributes:
         reader (:obj: `darling.reader.Reader`): A file reader implementing, at least, the functionallity
             specified in darling.reader.Reader().
+        data (:obj: `numpy.ndarray`): The data array of shape (a,b,m,n,(o)) where a,b are the detector
+            dimensions and m,n,(o) are the motor dimensions.
+        motors (:obj: `numpy.ndarray`): The motor grids of shape (k, m,n,(o)) where k is the number of
+            motors and m,n,(o) are the motor dimensions.
+        h5file (:obj: `string`): The absolute path to the h5 file in which all data resides.
 
     """
 
-    def __init__(self, reader):
-        self.reader = reader
+    def __init__(self, data_source, scan_id=None):
+        if isinstance(data_source, darling.reader.Reader):
+            self.reader = data_source
+            self.h5file = self.reader.abs_path_to_h5_file
+        elif isinstance(data_source, str):
+            self.reader = None
+            self.h5file = data_source
+        else:
+            raise ValueError(
+                "reader should be a darling.reader.Reader or a string to the h5 file."
+            )
+
         self.plot = _Visualizer(self)
         self.mean, self.covariance = None, None
         self.mean_3d, self.covariance_3d = None, None
         self.kam = None
         self.kam_kernel_size = None
 
-    def load_scan(self, scan_id, roi=None):
-        """Load a scan into RM.
+        self.data = None
+        self.motors = None
 
-        NOTE: Input args should match the darling.reader.Reader used, however it was implemented.
+    def info(self):
+        if self.data is not None:
+            for k in self.reader.scan_params:
+                print(f"{k:<20} :  {str(self.reader.scan_params[k]):<30}")
+        else:
+            print("No data loaded, use load_scan() to load data.")
+
+    def load_scan(self, scan_id, roi=None):
+        """Load a scan into RAM.
 
         Args:
-            scan_id (:obj:`str`): scan id to load from, these are internal keys to diffirentiate
-                layers.
+            scan_id (:obj:`str`): scan id to load from, these could be internal keys to
+                different layers for instance.
             roi (:obj:`tuple` of :obj:`int`): row_min row_max and column_min and column_max,
                 defaults to None, in which case all data is loaded. The roi refers to the detector
                 dimensions.
 
         """
+        if self.reader is None:
+            config = darling.metadata.ID03(self.h5file)
+            scan_params = config(scan_id)
+            if scan_params["motor_names"] is None:
+                self.reader = darling.reader.Darks(self.h5file)
+            elif len(scan_params["motor_names"]) == 1:
+                self.reader = darling.reader.RockingScan(self.h5file)
+            elif len(scan_params["motor_names"]) == 2:
+                self.reader = darling.reader.MosaScan(self.h5file)
+            else:
+                raise ValueError("Could not find a reader for your h5 file")
         self.data, self.motors = self.reader(scan_id, roi)
 
     def subtract(self, value):

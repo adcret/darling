@@ -935,15 +935,15 @@ The domain with the highest sum_intensity will be kept.</p></li>
 <span id="dataset"></span><h2>DataSet<a class="headerlink" href="#module-darling._dataset" title="Link to this heading">#</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="darling._dataset.DataSet">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">darling._dataset.</span></span><span class="sig-name descname"><span class="pre">DataSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reader</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/_dataset.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling._dataset.DataSet" title="Link to this definition">#</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">darling._dataset.</span></span><span class="sig-name descname"><span class="pre">DataSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scan_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/_dataset.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling._dataset.DataSet" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A DFXM data-set.</p>
-<p>This is the master data class of darling. Given a reader the DataSet class will read data form
+<p>This is the master data class of darling. Given a data source the DataSet class will read data from
 arbitrary layers, process, threshold, compute moments, visualize results, and compile 3D feature maps.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>(</strong> (<em>reader</em>) – obj: <cite>darling.reader.Reader</cite>): A file reader implementing, at least, the functionallity
-specified in darling.reader.Reader().</p>
+<dd class="field-odd"><p><strong>(</strong> (<em>data_source</em>) – obj: <cite>string</cite> or <cite>darling.reader.Reader</cite>): A string to the absolute h5 file path
+location of the data, or a reader object implementing the darling.reader.Reader() interface.</p>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -953,16 +953,40 @@ specified in darling.reader.Reader().</p>
 specified in darling.reader.Reader().</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">data</span> <span class="pre">(</span></span></dt>
+<dd><p>obj: <cite>numpy.ndarray</cite>): The data array of shape (a,b,m,n,(o)) where a,b are the detector
+dimensions and m,n,(o) are the motor dimensions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">motors</span> <span class="pre">(</span></span></dt>
+<dd><p>obj: <cite>numpy.ndarray</cite>): The motor grids of shape (k, m,n,(o)) where k is the number of
+motors and m,n,(o) are the motor dimensions.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">h5file</span> <span class="pre">(</span></span></dt>
+<dd><p>obj: <cite>string</cite>): The absolute path to the h5 file in which all data resides.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="darling._dataset.DataSet.info">
+<span class="sig-name descname"><span class="pre">info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/_dataset.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling._dataset.DataSet.info" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="darling._dataset.DataSet.load_scan">
 <span class="sig-name descname"><span class="pre">load_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/_dataset.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling._dataset.DataSet.load_scan" title="Link to this definition">#</a></dt>
-<dd><p>Load a scan into RM.</p>
-<p>NOTE: Input args should match the darling.reader.Reader used, however it was implemented.</p>
+<dd><p>Load a scan into RAM.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>scan_id</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – scan id to load from, these are internal keys to diffirentiate
-layers.</p></li>
+<li><p><strong>scan_id</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – scan id to load from, these could be internal keys to
+different layers for instance.</p></li>
 <li><p><strong>roi</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">int</span></code>) – row_min row_max and column_min and column_max,
 defaults to None, in which case all data is loaded. The roi refers to the detector
 dimensions.</p></li>
@@ -1217,6 +1241,46 @@ scan (typically 1,2 or 3).</p>
 </dd>
 </dl>
 </p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>data, motors</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="darling.reader.Darks">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">darling.reader.</span></span><span class="sig-name descname"><span class="pre">Darks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">abs_path_to_h5_file</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/reader.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.reader.Darks" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#darling.reader.MosaScan" title="darling.reader.MosaScan"><code class="xref py py-class docutils literal notranslate"><span class="pre">MosaScan</span></code></a></p>
+<p>Load a series of motorless images. This is a id03 specific implementation matphing aspecific beamline mosa scan macro.</p>
+<p>Typically used to red dark images collected with a loopscan.</p>
+<p>NOTE: This reader was specifically written for data collection at id03. For general purpose reading of data you
+must implement your own reader class. The exact reding of data is strongly dependent on data aqusition scheme and
+data structure implementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>str</strong> (<em>abs_path_to_h5_file</em>) – absolute path to the h5 file with the diffraction images.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="darling.reader.Darks.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/AxelHenningsson/darling/tree/main/darling/reader.py/"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#darling.reader.Darks.__call__" title="Link to this definition">#</a></dt>
+<dd><p>Load a scan</p>
+<p>this loads the static scan data array with shape a,b,m where a,b are the detector dimensions and
+m is the number of (motorless) images. You may view the implemented darling readers as example templates
+for implementing your own reader.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scan_id</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">str</span></code>) – scan id to load from, e.g 1.1, 2.1 etc…</p></li>
+<li><p><strong>roi</strong> (<code class="xref py py-obj docutils literal notranslate"><span class="pre">tuple</span></code> of <code class="xref py py-obj docutils literal notranslate"><span class="pre">int</span></code>) – row_min row_max and column_min and column_max,
+defaults to None, in which case all data is loaded</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>data of shape=(a,b,m) and an empty motor array.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>data, motors</p>
@@ -1521,6 +1585,7 @@ scan_params[“data_name”]</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-darling._dataset">DataSet</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling._dataset.DataSet"><code class="docutils literal notranslate"><span class="pre">DataSet</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#darling._dataset.DataSet.info"><code class="docutils literal notranslate"><span class="pre">DataSet.info()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#darling._dataset.DataSet.load_scan"><code class="docutils literal notranslate"><span class="pre">DataSet.load_scan()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#darling._dataset.DataSet.subtract"><code class="docutils literal notranslate"><span class="pre">DataSet.subtract()</span></code></a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#darling._dataset.DataSet.estimate_background"><code class="docutils literal notranslate"><span class="pre">DataSet.estimate_background()</span></code></a></li>
@@ -1541,6 +1606,10 @@ scan_params[“data_name”]</p>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.reader.MosaScan"><code class="docutils literal notranslate"><span class="pre">MosaScan</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.reader.MosaScan.__call__"><code class="docutils literal notranslate"><span class="pre">MosaScan.__call__()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.reader.Darks"><code class="docutils literal notranslate"><span class="pre">Darks</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.reader.Darks.__call__"><code class="docutils literal notranslate"><span class="pre">Darks.__call__()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#darling.reader.RockingScan"><code class="docutils literal notranslate"><span class="pre">RockingScan</span></code></a><ul class="nav section-nav flex-column">
