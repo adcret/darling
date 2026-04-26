@@ -52,16 +52,18 @@ def fit_1D_gaussian(
     )
 
 
-def fit_nd_gaussian(data, coordinates):
-    """Fit one full-covariance 2D or 3D Gaussian per detector pixel.
+def fit_nd_gaussian(data, coordinates, mode="full", k=3, labels=None, filter=None):
+    """Fit full-covariance 2D or 3D Gaussian models per detector pixel.
 
     The fitted model is defined in vector form as
 
     ``I(x) = amplitude * exp(-0.5 * (x - mean).T @ precision @ (x - mean))``
 
-    where ``x`` and ``mean`` are vectors of length 2 or 3. The implementation
-    is numba-backed and traverses the scan axes directly without flattening or
-    copying the input data or coordinate grids.
+    where ``x`` and ``mean`` are vectors of length 2 or 3. With
+    ``mode="full"`` a single Gaussian is fit to each full spectrum. With
+    ``mode="local_max"``, or when a ``labels`` array is supplied, the local-max
+    labelled regions are fit independently and the first ``k`` regions by
+    integrated intensity are returned.
 
     Args:
         data (:obj:`numpy.ndarray`): Intensity array of shape ``(ny, nx, m, n)``
@@ -69,14 +71,23 @@ def fit_nd_gaussian(data, coordinates):
         coordinates (:obj:`tuple` or :obj:`numpy.ndarray`): Coordinate grids
             with length 2 or 3. Each coordinate array must match
             ``data.shape[2:]``.
+        mode (:obj:`str`): Either ``"full"`` or ``"local_max"``. Defaults to
+            ``"full"``.
+        k (:obj:`int`): Number of labelled regions to fit per detector pixel
+            in labelled/local-max mode. Defaults to 3.
+        labels (:obj:`numpy.ndarray`): Optional precomputed labels with the
+            same shape as ``data``.
+        filter (:obj:`dict`): Optional local-max labelling filter dictionary.
 
     Returns:
         :obj:`dict`: Fitted parameters with keys ``amplitude``, ``mean``,
-            ``covariance``, ``precision`` and ``log_residual``.
+            ``covariance``, ``precision`` and ``log_residual``. Labelled mode
+            also returns ``label``, ``sum_intensity`` and
+            ``number_of_pixels``.
     """
     from darling.fitting import gaussian
 
-    return gaussian(data, coordinates)
+    return gaussian(data, coordinates, mode=mode, k=k, labels=labels, filter=filter)
 
 
 @numba.njit(cache=True)
