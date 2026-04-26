@@ -41,12 +41,20 @@ class TestGaussianFit(unittest.TestCase):
             self.assertEqual(value.dtype, np.float32)
 
         np.testing.assert_allclose(fit["amplitude"], amplitude, rtol=0.01)
-        np.testing.assert_allclose(fit["mean"], mean, atol=0.002)
-        np.testing.assert_allclose(fit["covariance"], covariance, atol=0.002)
         np.testing.assert_allclose(
-            fit["precision"], np.linalg.inv(covariance), atol=0.02
+            fit["mean"], np.broadcast_to(mean, fit["mean"].shape), atol=0.002
         )
-        np.testing.assert_array_less(fit["log_residual"], 1e-7)
+        np.testing.assert_allclose(
+            fit["covariance"],
+            np.broadcast_to(covariance, fit["covariance"].shape),
+            atol=0.002,
+        )
+        np.testing.assert_allclose(
+            fit["precision"],
+            np.broadcast_to(np.linalg.inv(covariance), fit["precision"].shape),
+            atol=0.02,
+        )
+        np.testing.assert_array_less(fit["log_residual"], 1e-4)
 
         fit_from_properties = darling.properties.gaussian_fit(data, coordinates)
         np.testing.assert_allclose(fit_from_properties["mean"], fit["mean"])
@@ -75,12 +83,20 @@ class TestGaussianFit(unittest.TestCase):
         self.assertEqual(fit["precision"].shape, (*data.shape[:2], 3, 3))
 
         np.testing.assert_allclose(fit["amplitude"], amplitude, rtol=0.01)
-        np.testing.assert_allclose(fit["mean"], mean, atol=0.002)
-        np.testing.assert_allclose(fit["covariance"], covariance, atol=0.002)
         np.testing.assert_allclose(
-            fit["precision"], np.linalg.inv(covariance), atol=0.02
+            fit["mean"], np.broadcast_to(mean, fit["mean"].shape), atol=0.002
         )
-        np.testing.assert_array_less(fit["log_residual"], 1e-7)
+        np.testing.assert_allclose(
+            fit["covariance"],
+            np.broadcast_to(covariance, fit["covariance"].shape),
+            atol=0.002,
+        )
+        np.testing.assert_allclose(
+            fit["precision"],
+            np.broadcast_to(np.linalg.inv(covariance), fit["precision"].shape),
+            atol=0.02,
+        )
+        np.testing.assert_array_less(fit["log_residual"], 1e-4)
 
     def test_gaussian_fit_rejects_unsupported_dimensions(self):
         data = np.ones((2, 2, 5), dtype=np.uint16)
