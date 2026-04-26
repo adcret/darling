@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 
 import darling
+from darling.properties.curvefit import fit_nd_gaussian
 
 
 def _gaussian_values(coordinates, amplitude, mean, covariance):
@@ -31,7 +32,7 @@ class TestGaussianFit(unittest.TestCase):
         data = np.zeros((3, 4, *image.shape), dtype=np.uint16)
         data[...] = np.round(image).astype(np.uint16)
 
-        fit = darling.fitting.gaussian(data, coordinates)
+        fit = fit_nd_gaussian(data, coordinates)
 
         self.assertEqual(fit["amplitude"].shape, data.shape[:2])
         self.assertEqual(fit["mean"].shape, (*data.shape[:2], 2))
@@ -56,7 +57,7 @@ class TestGaussianFit(unittest.TestCase):
         )
         np.testing.assert_array_less(fit["log_residual"], 1e-4)
 
-        fit_from_properties = darling.properties.gaussian_fit(data, coordinates)
+        fit_from_properties = darling.properties.fit_nd_gaussian(data, coordinates)
         np.testing.assert_allclose(fit_from_properties["mean"], fit["mean"])
 
     def test_gaussian_fit_3d(self):
@@ -75,7 +76,7 @@ class TestGaussianFit(unittest.TestCase):
         data = np.zeros((2, 3, *image.shape), dtype=np.uint16)
         data[...] = np.round(image).astype(np.uint16)
 
-        fit = darling.fitting.gaussian(data, coordinates)
+        fit = fit_nd_gaussian(data, coordinates)
 
         self.assertEqual(fit["amplitude"].shape, data.shape[:2])
         self.assertEqual(fit["mean"].shape, (*data.shape[:2], 3))
@@ -102,7 +103,7 @@ class TestGaussianFit(unittest.TestCase):
         data = np.ones((2, 2, 5), dtype=np.uint16)
         coordinates = np.arange(5, dtype=np.float32).reshape(1, 5)
         with self.assertRaises(ValueError):
-            darling.fitting.gaussian(data, coordinates)
+            fit_nd_gaussian(data, coordinates)
 
 
 if __name__ == "__main__":

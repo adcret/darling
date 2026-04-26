@@ -6,6 +6,14 @@
 
 
 ======================================
+DataSet
+======================================
+
+.. automodule:: darling.io._dataset.DataSet
+    :members:
+    :show-inheritance:
+
+======================================
 properties
 ======================================
 
@@ -14,42 +22,49 @@ properties
     :show-inheritance:
 
 ======================================
-peaksearcher
+filters
 ======================================
 
-.. automodule:: darling.peaksearcher
+.. automodule:: darling.filters
     :members:
     :show-inheritance:
 
 ======================================
-DataSet
+transforms
 ======================================
 
-.. automodule:: darling._dataset
+.. automodule:: darling.transforms
     :members:
     :show-inheritance:
 
 ======================================
-reader
+io
 ======================================
 
-.. automodule:: darling.reader
+.. automodule:: darling.io
     :members:
     :show-inheritance:
 
 ======================================
-assets
+geometry
 ======================================
 
-.. automodule:: darling.assets
+.. automodule:: darling.geometry
     :members:
     :show-inheritance:
 
 ======================================
-metadata
+crystal
 ======================================
 
-.. automodule:: darling.metadata
+.. automodule:: darling.crystal
     :members:
     :show-inheritance:
 
+======================================
+diffraction
+======================================
+
+.. automodule:: darling.diffraction
+    :members:
+    :show-inheritance:
