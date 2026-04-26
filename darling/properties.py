@@ -34,6 +34,7 @@ import numba
 import numpy as np
 
 import darling._color as color
+import darling.fitting as fitting
 import darling.peaksearcher as peaksearcher
 
 
@@ -252,6 +253,16 @@ def moments(data, coordinates):
     mu = mean(data, coordinates)
     cov = covariance(data, coordinates, first_moments=mu)
     return mu, cov
+
+
+def gaussian_fit(data, coordinates):
+    """Fit one full-covariance Gaussian to every detector pixel.
+
+    This is a convenience wrapper around :func:`darling.fitting.gaussian`.
+    It supports 2D and 3D scan coordinates and returns amplitude, mean,
+    covariance, precision and log-space residual maps.
+    """
+    return fitting.gaussian(data, coordinates)
 
 
 def mean(data, coordinates):
@@ -785,6 +796,29 @@ def gaussian_mixture(data, k=8, coordinates=None):
             props = peaksearcher._gaussian_mixture(data, k, coordinates=None)
 
     return props
+
+
+def gaussian_fit(data, coordinates):
+    """Fit one parametric full-covariance Gaussian per detector pixel.
+
+    This is a convenience wrapper for :func:`darling.fitting.gaussian`. The
+    fitted Gaussian is defined in vector form as
+
+    ``I(x) = amplitude * exp(-0.5 * (x - mean).T @ precision @ (x - mean))``
+
+    for either 2D or 3D coordinate vectors.
+
+    Args:
+        data (:obj:`numpy.ndarray`): Intensity array of shape ``(a, b, m, n)``
+            or ``(a, b, m, n, o)`` with ``uint16`` dtype.
+        coordinates (:obj:`tuple` or :obj:`numpy.ndarray`): Coordinate grids
+            with length 2 or 3, each matching ``data.shape[2:]``.
+
+    Returns:
+        :obj:`dict`: Fitted parameters with keys ``amplitude``, ``mean``,
+            ``covariance``, ``precision`` and ``log_residual``.
+    """
+    return fitting.gaussian(data, coordinates)
 
 
 if __name__ == "__main__":
